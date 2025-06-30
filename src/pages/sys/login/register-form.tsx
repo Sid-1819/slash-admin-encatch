@@ -144,12 +144,12 @@ function RegisterForm() {
 						Add Extra Fields (optional)
 					</label>
 					{customFields.map((field, idx) => (
-						<div key={field.key || `custom-field-${idx}`} className="flex gap-2 mb-2">
+						<div key={idx} className="flex gap-2 mb-2">
 							<Input
 								id={`custom-field-key-${idx}`}
 								placeholder="Key (e.g. user_email, age)"
 								value={field.key}
-								onInput={(e) => handleFieldChange(idx, "key", (e.target as HTMLInputElement).value)}
+								onChange={(e) => handleFieldChange(idx, "key", e.target.value)}
 								className="w-1/2"
 							/>
 							<Input placeholder="Value" value={field.value} onChange={(e) => handleFieldChange(idx, "value", e.target.value)} className="w-1/2" />
