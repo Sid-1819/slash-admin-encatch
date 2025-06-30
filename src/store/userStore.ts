@@ -63,9 +63,18 @@ export const useSignIn = () => {
 	const signIn = async (data: SignInReq) => {
 		try {
 			const res = await signInMutation.mutateAsync(data);
-			const { user, accessToken, refreshToken } = res;
+			// Patch: support both access_token and accessToken for compatibility
+			const accessToken = res.accessToken || res.access_token;
+			const refreshToken = res.refreshToken || res.refresh_token;
+			const user = {
+				id: res.user.username, // Use username as id for mock
+				username: res.user.username,
+				email: res.user.email,
+				// ...add other UserInfo fields as needed
+			};
 			setUserToken({ accessToken, refreshToken });
 			setUserInfo(user);
+			return { ...res, user }; // Return patched user for Ensight
 		} catch (err) {
 			toast.error(err.message, {
 				position: "top-center",

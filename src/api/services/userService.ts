@@ -20,8 +20,51 @@ export enum UserApi {
 	User = "/user",
 }
 
-const signin = (data: SignInReq) => apiClient.post<SignInRes>({ url: UserApi.SignIn, data });
-const signup = (data: SignUpReq) => apiClient.post<SignInRes>({ url: UserApi.SignUp, data });
+// Helper to get users from localStorage
+function getLocalUsers() {
+	const users = localStorage.getItem("slashadmin_users");
+	return users ? JSON.parse(users) : [];
+}
+
+// Helper to save users to localStorage
+function setLocalUsers(users: any[]) {
+	localStorage.setItem("slashadmin_users", JSON.stringify(users));
+}
+
+const signin = async (data: SignInReq) => {
+	if (data.username === "guest" && data.password === "guest") {
+		return {
+			access_token: "test-token",
+			refresh_token: "test-refresh-token",
+			user: { username: data.username, email: data.username },
+		};
+	}
+	const users = getLocalUsers();
+	const user = users.find((u: any) => u.username === data.username && u.password === data.password);
+	if (!user) throw new Error("Invalid credentials");
+	// Simulate token and user info
+	return {
+		access_token: "test-token",
+		refresh_token: "test-refresh-token",
+		user: { username: user.username, email: user.email },
+	};
+};
+
+const signup = async (data: SignUpReq) => {
+	const users = getLocalUsers();
+	if (users.some((u: any) => u.username === data.username)) {
+		throw new Error("Username already exists");
+	}
+	users.push({ username: data.username, email: data.email, password: data.password });
+	setLocalUsers(users);
+	// Simulate token and user info
+	return {
+		access_token: "test-token",
+		refresh_token: "test-refresh-token",
+		user: { username: data.username, email: data.email },
+	};
+};
+
 const logout = () => apiClient.get({ url: UserApi.Logout });
 const findById = (id: string) => apiClient.get<UserInfo[]>({ url: `${UserApi.User}/${id}` });
 

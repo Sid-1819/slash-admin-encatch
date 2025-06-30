@@ -16,6 +16,16 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { LoginStateEnum, useLoginStateContext } from "./providers/login-provider";
 
+// Add Ensight type to window
+declare global {
+	interface Window {
+		ensight?: {
+			identify?: (identity: { userId: string; email?: string }) => void;
+			// ...other ensight methods
+		};
+	}
+}
+
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<"form">) {
 	const { t } = useTranslation();
 	const [loading, setLoading] = useState(false);
@@ -27,8 +37,8 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 
 	const form = useForm<SignInReq>({
 		defaultValues: {
-			username: DB_USER[0].username,
-			password: DB_USER[0].password,
+			username: "guest",
+			password: "guest",
 		},
 	});
 
@@ -37,14 +47,31 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 	const handleFinish = async (values: SignInReq) => {
 		setLoading(true);
 		try {
-			await signIn(values);
+			const res = await signIn(values);
 			navigatge(GLOBAL_CONFIG.defaultRoute, { replace: true });
+			// Ensight: set identity after successful login, but skip for guest
+			if (values.username !== "guest" && window.ensight && typeof window.ensight.identify === "function") {
+				// @ts-ignore: Ensight identify can take (userId, { ... })
+				window.ensight.identify(res.user.username, {
+					email: res.user.email,
+				});
+			}
 			toast.success("Sign in success!", {
 				closeButton: true,
 			});
+		} catch (e: any) {
+			toast.error(e.message || "Login failed");
 		} finally {
 			setLoading(false);
 		}
+	};
+
+	// Guest login handler
+	const handleGuestLogin = () => {
+		setTimeout(() => {
+			navigatge(GLOBAL_CONFIG.defaultRoute, { replace: true });
+			toast.success("Signed in as Guest", { closeButton: true });
+		}, 0);
 	};
 
 	return (
@@ -103,6 +130,11 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 					<Button type="submit" className="w-full">
 						{loading && <Loader2 className="animate-spin mr-2" />}
 						{t("sys.login.loginButton")}
+					</Button>
+
+					{/* Guest login button */}
+					<Button type="button" variant="outline" className="w-full" onClick={handleGuestLogin}>
+						{t("sys.login.guestLogin", { defaultValue: "Login as Guest" })}
 					</Button>
 
 					{/* 手机登录/二维码登录 */}
