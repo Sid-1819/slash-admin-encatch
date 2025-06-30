@@ -1,5 +1,6 @@
 import apiClient from "../apiClient";
 
+import { da } from "@faker-js/faker";
 import type { UserInfo, UserToken } from "#/entity";
 
 export interface SignInReq {
@@ -36,7 +37,7 @@ const signin = async (data: SignInReq) => {
 		return {
 			access_token: "test-token",
 			refresh_token: "test-refresh-token",
-			user: { username: data.username, email: data.username },
+			user: data,
 		};
 	}
 	const users = getLocalUsers();
@@ -61,7 +62,7 @@ const signup = async (data: SignUpReq) => {
 	return {
 		access_token: "test-token",
 		refresh_token: "test-refresh-token",
-		user: { username: data.username, email: data.email },
+		user: data,
 	};
 };
 

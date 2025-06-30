@@ -76,12 +76,12 @@ export const useSignIn = () => {
 
 			// Ensight: set identity with username and dynamic fields
 			if (user.username !== "guest" && window.ensight && typeof window.ensight.identify === "function") {
-				const { username, ...properties } = user;
+				const { username, password, confirmPassword, ...properties } = user;
 				console.log("Ensight properties:", properties);
 				window.ensight.identify(username, properties);
 			}
 
-			return { ...res, user }; // Return patched user for Ensight
+			return { ...res, user };
 		} catch (err) {
 			toast.error(err.message, {
 				position: "top-center",
