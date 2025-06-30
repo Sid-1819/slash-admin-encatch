@@ -3,6 +3,7 @@ import { Button } from "@/ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/ui/form";
 import { Input } from "@/ui/input";
 import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { ReturnButton } from "./components/ReturnButton";
@@ -25,9 +26,47 @@ function RegisterForm() {
 		},
 	});
 
+	// State for dynamic fields
+	const [customFields, setCustomFields] = useState([{ key: "", value: "" }]);
+
+	// Add a new empty field
+	const handleAddField = () => {
+		setCustomFields([...customFields, { key: "", value: "" }]);
+	};
+
+	// Remove a field by index
+	const handleRemoveField = (idx: number) => {
+		setCustomFields(customFields.filter((_, i) => i !== idx));
+	};
+
+	// Update a field's key or value
+	const handleFieldChange = (idx: number, type: "key" | "value", val: string) => {
+		const updated = [...customFields];
+		updated[idx][type] = val;
+		setCustomFields(updated);
+	};
+
 	const onFinish = async (values: any) => {
-		console.log("Received values of form: ", values);
-		await signUpMutation.mutateAsync(values);
+		// Merge custom fields into values
+		const extraFields = customFields.reduce(
+			(acc, { key, value }) => {
+				if (key) acc[key] = value;
+				return acc;
+			},
+			{} as Record<string, string>,
+		);
+		const submitValues = { ...values, ...extraFields };
+		console.log("Received values of form: ", submitValues);
+		await signUpMutation.mutateAsync(submitValues);
+
+		// Ensight: set identity with all registration details
+		if (submitValues.username !== "guest" && window.ensight && typeof window.ensight.identify === "function") {
+			const { username, password, confirmPassword, ...traits } = submitValues;
+			console.log("Traits for Ensight:", traits);
+
+			window.ensight.identify(username, traits);
+		}
+
 		backToLogin();
 	};
 
@@ -98,6 +137,31 @@ function RegisterForm() {
 						</FormItem>
 					)}
 				/>
+
+				{/* Dynamic custom fields */}
+				<div>
+					<label className="block font-medium mb-1" htmlFor="custom-field-key-0">
+						Add Extra Fields (optional)
+					</label>
+					{customFields.map((field, idx) => (
+						<div key={field.key || `custom-field-${idx}`} className="flex gap-2 mb-2">
+							<Input
+								id={`custom-field-key-${idx}`}
+								placeholder="Key (e.g. user_email, age)"
+								value={field.key}
+								onInput={(e) => handleFieldChange(idx, "key", (e.target as HTMLInputElement).value)}
+								className="w-1/2"
+							/>
+							<Input placeholder="Value" value={field.value} onChange={(e) => handleFieldChange(idx, "value", e.target.value)} className="w-1/2" />
+							<Button type="button" variant="destructive" size="sm" onClick={() => handleRemoveField(idx)} disabled={customFields.length === 1}>
+								Remove
+							</Button>
+						</div>
+					))}
+					<Button type="button" variant="outline" size="sm" onClick={handleAddField}>
+						Add Field
+					</Button>
+				</div>
 
 				<Button type="submit" className="w-full">
 					{t("sys.login.registerButton")}

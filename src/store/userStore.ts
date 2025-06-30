@@ -66,14 +66,21 @@ export const useSignIn = () => {
 			// Patch: support both access_token and accessToken for compatibility
 			const accessToken = res.accessToken || res.access_token;
 			const refreshToken = res.refreshToken || res.refresh_token;
+			// Store all user fields, not just username/email
 			const user = {
 				id: res.user.username, // Use username as id for mock
-				username: res.user.username,
-				email: res.user.email,
-				// ...add other UserInfo fields as needed
+				...res.user, // Spread all user fields (including dynamic)
 			};
 			setUserToken({ accessToken, refreshToken });
 			setUserInfo(user);
+
+			// Ensight: set identity with username and dynamic fields
+			if (user.username !== "guest" && window.ensight && typeof window.ensight.identify === "function") {
+				const { username, ...properties } = user;
+				console.log("Ensight properties:", properties);
+				window.ensight.identify(username, properties);
+			}
+
 			return { ...res, user }; // Return patched user for Ensight
 		} catch (err) {
 			toast.error(err.message, {

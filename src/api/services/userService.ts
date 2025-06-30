@@ -46,7 +46,7 @@ const signin = async (data: SignInReq) => {
 	return {
 		access_token: "test-token",
 		refresh_token: "test-refresh-token",
-		user: { username: user.username, email: user.email },
+		user: user,
 	};
 };
 
@@ -55,7 +55,7 @@ const signup = async (data: SignUpReq) => {
 	if (users.some((u: any) => u.username === data.username)) {
 		throw new Error("Username already exists");
 	}
-	users.push({ username: data.username, email: data.email, password: data.password });
+	users.push(data);
 	setLocalUsers(users);
 	// Simulate token and user info
 	return {
