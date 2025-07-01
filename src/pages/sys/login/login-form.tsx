@@ -131,11 +131,6 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 						{t("sys.login.loginButton")}
 					</Button>
 
-					{/* Guest login button */}
-					<Button type="button" variant="outline" className="w-full" onClick={handleGuestLogin}>
-						{t("sys.login.guestLogin", { defaultValue: "Login as Guest" })}
-					</Button>
-
 					{/* 手机登录/二维码登录 */}
 					<div className="grid gap-4 sm:grid-cols-2">
 						<Button variant="outline" className="w-full" onClick={() => setLoginState(LoginStateEnum.MOBILE)}>
