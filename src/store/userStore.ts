@@ -64,8 +64,8 @@ export const useSignIn = () => {
 		try {
 			const res = await signInMutation.mutateAsync(data);
 			// Patch: support both access_token and accessToken for compatibility
-			const accessToken = res.accessToken || res.access_token;
-			const refreshToken = res.refreshToken || res.refresh_token;
+			const accessToken = res.access_token;
+			const refreshToken = res.refresh_token;
 			// Store all user fields, not just username/email
 			const user = {
 				id: res.user.username, // Use username as id for mock

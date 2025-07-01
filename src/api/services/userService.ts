@@ -1,7 +1,5 @@
-import apiClient from "../apiClient";
-
-import { da } from "@faker-js/faker";
 import type { UserInfo, UserToken } from "#/entity";
+import apiClient from "../apiClient";
 
 export interface SignInReq {
 	username: string;

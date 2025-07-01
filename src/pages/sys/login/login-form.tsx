@@ -20,7 +20,7 @@ import { LoginStateEnum, useLoginStateContext } from "./providers/login-provider
 declare global {
 	interface Window {
 		ensight?: {
-			identify?: (identity: { userId: string; email?: string }) => void;
+			identify: (userId: string, traits?: Record<string, any>) => void;
 			// ...other ensight methods
 		};
 	}
@@ -63,14 +63,6 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 		} finally {
 			setLoading(false);
 		}
-	};
-
-	// Guest login handler
-	const handleGuestLogin = () => {
-		setTimeout(() => {
-			navigatge(GLOBAL_CONFIG.defaultRoute, { replace: true });
-			toast.success("Signed in as Guest", { closeButton: true });
-		}, 0);
 	};
 
 	return (
