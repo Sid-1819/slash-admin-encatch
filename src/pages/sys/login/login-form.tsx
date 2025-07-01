@@ -49,7 +49,6 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 		try {
 			const res = await signIn(values);
 			navigatge(GLOBAL_CONFIG.defaultRoute, { replace: true });
-			// Ensight: set identity after successful login, but skip for guest
 			if (values.username !== "guest" && window.ensight && typeof window.ensight.identify === "function") {
 				const { username, password, confirmPassword, ...properties } = res.user;
 				console.log("Ensight properties:", properties);
