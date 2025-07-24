@@ -16,16 +16,6 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { LoginStateEnum, useLoginStateContext } from "./providers/login-provider";
 
-// Add Ensight type to window
-declare global {
-	interface Window {
-		ensight?: {
-			identify: (userId: string, traits?: Record<string, any>) => void;
-			// ...other ensight methods
-		};
-	}
-}
-
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<"form">) {
 	const { t } = useTranslation();
 	const [loading, setLoading] = useState(false);
@@ -37,8 +27,8 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 
 	const form = useForm<SignInReq>({
 		defaultValues: {
-			username: "guest",
-			password: "guest",
+			username: DB_USER[0].username,
+			password: DB_USER[0].password,
 		},
 	});
 
@@ -47,20 +37,16 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 	const handleFinish = async (values: SignInReq) => {
 		setLoading(true);
 		try {
-			const res = await signIn(values);
+			await signIn(values);
 			navigatge(GLOBAL_CONFIG.defaultRoute, { replace: true });
-			if (values.username !== "guest" && window.ensight && typeof window.ensight.identify === "function") {
-				const { username, password, confirmPassword, ...properties } = res.user;
-				console.log("Ensight properties:", properties);
-				window.ensight.identify(username, properties);
-			}
 			toast.success("Sign in success!", {
 				closeButton: true,
 			});
-		} catch (e: any) {
-			toast.error(e.message || "Login failed");
 		} finally {
 			setLoading(false);
+			window.ensight.trackEvent("customEvent", {
+				login: "User logged in",
+			});
 		}
 	};
 

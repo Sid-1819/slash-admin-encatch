@@ -117,6 +117,12 @@ export const frontendNavData: NavProps["data"] = [
 					},
 				],
 			},
+			// posts
+			{
+				title: "sys.nav.posts",
+				path: "/posts", // Use a listing page for consistency
+				icon: <Icon icon="mdi:post-outline" size={24} />,
+			},
 		],
 	},
 	{
