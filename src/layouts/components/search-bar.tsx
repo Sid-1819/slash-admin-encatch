@@ -3,7 +3,8 @@ import useLocale from "@/locales/use-locale";
 import { useRouter } from "@/routes/hooks";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
-import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/ui/command";
+import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandSeparator } from "@/ui/command";
+import { ScrollArea } from "@/ui/scroll-area";
 import { Text } from "@/ui/typography";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBoolean } from "react-use";
@@ -94,21 +95,29 @@ const SearchBar = () => {
 		[replace, setOpen],
 	);
 
+	const handleOpenSearch = () => {
+		setOpen(true);
+		window.ensight.trackEvent("customEvent", {
+			searchBarOpened: "Search bar opened",
+		});
+		console.log("Search bar opened");
+	};
+
 	return (
 		<>
-			<Button variant="ghost" className="bg-secondary px-2 rounded-lg" size="sm" onClick={() => setOpen(true)}>
+			<Button variant="ghost" className="bg-action-selected px-2 rounded-lg" size="sm" onClick={handleOpenSearch}>
 				<div className="flex items-center justify-center gap-4">
 					<Icon icon="local:ic-search" size="20" />
-					<kbd className="flex h-6 items-center justify-center rounded-md bg-common-white px-1.5 font-bold text-gray-800">
-						<span>⌘</span>
-						<span className="text-xs">K</span>
+					<kbd className="flex items-center justify-center rounded-md bg-primary/80 text-common-white px-1.5 py-0.5 text-sm font-semibold">
+						<Icon icon="qlementine-icons:key-cmd-16" />
+						<span>K</span>
 					</kbd>
 				</div>
 			</Button>
 
 			<CommandDialog open={open} onOpenChange={setOpen}>
 				<CommandInput placeholder="Type a command or search..." value={searchQuery} onValueChange={setSearchQuery} />
-				<CommandList className="min-h-[400px]">
+				<ScrollArea className="h-[400px]">
 					<CommandEmpty>No results found.</CommandEmpty>
 					<CommandGroup heading="Navigations">
 						{searchResult.map(({ key, label }) => (
@@ -122,7 +131,7 @@ const SearchBar = () => {
 							</CommandItem>
 						))}
 					</CommandGroup>
-				</CommandList>
+				</ScrollArea>
 				<CommandSeparator />
 				<div className="flex flex-wrap text-text-primary p-2 justify-end gap-2">
 					<div className="flex items-center gap-1">

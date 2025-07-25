@@ -19,6 +19,9 @@ export default function AccountDropdown() {
 		try {
 			clearUserInfoAndToken();
 			backToLogin();
+			window.ensight.trackEvent("customEvent", {
+				logout: "User logged out",
+			});
 		} catch (error) {
 			console.log(error);
 		} finally {

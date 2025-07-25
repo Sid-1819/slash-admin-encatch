@@ -10,6 +10,15 @@ import { GLOBAL_CONFIG } from "./global-config";
 import { AntdAdapter } from "./theme/adapter/antd.adapter";
 import { ThemeProvider } from "./theme/theme-provider";
 
+declare global {
+	interface Window {
+		ensight: {
+			identify: (username: string, properties: Record<string, any>) => void;
+			trackEvent: (eventName: string, properties: Record<string, any>) => void;
+		};
+	}
+}
+
 if (import.meta.env.DEV) {
 	import("react-scan").then(({ scan }) => {
 		scan({
