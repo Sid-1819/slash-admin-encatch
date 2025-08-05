@@ -12,18 +12,22 @@ import { GLOBAL_CONFIG } from "./global-config";
 import PageError from "./pages/sys/error/PageError";
 import { routesSection } from "./routes/sections";
 import { urlJoin } from "./utils";
-import encatchJS, { debugSDKState } from "encatch-web-sdk";
+import { init } from "encatch-web-sdk";
 
 await registerLocalIcons();
-await worker.start({ onUnhandledRequest: "bypass", serviceWorker: { url: urlJoin(GLOBAL_CONFIG.publicPath, "mockServiceWorker.js") } });
+await worker.start({
+	onUnhandledRequest: "bypass",
+	serviceWorker: {
+		url: urlJoin(GLOBAL_CONFIG.publicPath, "mockServiceWorker.js"),
+	},
+});
 if (GLOBAL_CONFIG.routerMode === "backend") {
 	await menuService.getMenuList();
 }
 
-encatchJS.init("eng_dev_11eu7yMd66L64yGvaf0KYMKeTgBuYBJ8jVWrjsCruWuwW89bthYLQkdro8YrNlv0boi8NC1gltv3_70f15c73", {
+init("eng_dev_11eu7yMd66L64yGvaf0KYMKeTgBuYBJ8jVWrjsCruWuwW89bthYLQkdro8YrNlv0boi8NC1gltv3_70f15c73", {
 	host: "https://app.dev.encatch.com",
 });
-debugSDKState();
 
 const router = createBrowserRouter(
 	[

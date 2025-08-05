@@ -5,7 +5,7 @@ import { Input } from "@/ui/input";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import { forcedFetchConfiguration, openFeedbackById } from "encatch-web-sdk";
+import { forcedFetchConfiguration, openFeedbackById, setThemeMode } from "encatch-web-sdk";
 
 type FieldType = {
 	oldPassword: string;
@@ -28,6 +28,7 @@ export default function SecurityTab() {
 		forcedFetchConfiguration();
 
 		console.log("Siddhu");
+		setThemeMode("dark");
 		openFeedbackById("01982176-2893-7448-b28a-767506047710");
 	};
 	return (
