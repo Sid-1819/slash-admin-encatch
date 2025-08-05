@@ -8,10 +8,11 @@ import { ScrollArea } from "@/ui/scroll-area";
 import { cn } from "@/utils";
 import { flattenTrees } from "@/utils/tree";
 import { clone, concat } from "ramda";
-import { Suspense } from "react";
+import { Suspense, useRef } from "react";
 import { Outlet, useLocation } from "react-router";
 import { backendNavData } from "./nav/nav-data/nav-data-backend";
 import { frontendNavData } from "./nav/nav-data/nav-data-frontend";
+import { captureScrollFeedback } from "encatch-web-sdk";
 
 /**
  * find auth by path
@@ -31,6 +32,7 @@ const allItems = navData.reduce((acc: any[], group) => {
 
 const Main = () => {
 	const { themeStretch, themeLayout } = useSettings();
+	const mainRef = useRef<HTMLDivElement>(null);
 
 	const { pathname } = useLocation();
 	const currentNavAuth = findAuthByPath(pathname);
@@ -41,11 +43,19 @@ const Main = () => {
 			: "h-[calc(100vh-var(--layout-header-height))]";
 
 	return (
-		<ScrollArea className={cn("flex w-full grow ", heightClass)}>
+		<ScrollArea
+			className={cn("flex w-full grow ", heightClass)}
+			ref={mainRef}
+			onScrollPercentChange={(percent) => {
+				console.log("[Scroll Debug] Scroll percent changed:", percent);
+
+				captureScrollFeedback(percent);
+			}}
+		>
 			<AuthGuard checkAny={currentNavAuth} fallback={<Page403 />}>
 				<main
 					data-slot="slash-layout-main"
-					className={cn("w-full h-full mx-auto p-2", {
+					className={cn("w-full h-full mx-auto p-2 overflow-auto", {
 						"xl:max-w-screen-xl": !themeStretch,
 					})}
 				>
