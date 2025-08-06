@@ -21,8 +21,8 @@ declare global {
 		trackEvent: (...args: any[]) => void;
 		setIdentity: (...args: any[]) => void;
 		verifyFeedbackIds: (...args: any[]) => void;
-		forcedFetchConfiguration: () => Promise<void>;
-		captureScrollFeedback: (scrollPercent: number | string) => void;
+		forceFetchEligibleFeedbacks: () => Promise<void>;
+		capturePageScrollEvent: (scrollPercent: number | string) => void;
 		[key: string]: any; // 👈 Add an index signature to fix dynamic property access
 	}
 
