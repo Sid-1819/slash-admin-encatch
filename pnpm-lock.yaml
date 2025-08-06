@@ -99,8 +99,8 @@ importers:
         specifier: ^1.11.13
         version: 1.11.13
       encatch-web-sdk:
-        specifier: ^1.0.2
-        version: 1.0.2
+        specifier: ^1.0.5
+        version: 1.0.5
       highlight.js:
         specifier: ^11.10.0
         version: 11.11.1
@@ -2500,8 +2500,8 @@ packages:
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
 
-  encatch-web-sdk@1.0.2:
-    resolution: {integrity: sha512-sL51YYnVp8RNcFz+xpd0shO4aymDAMC1TdV7d2JwOTcjEpvatCp73jnOOSRH6iEF2px1EayjRW9n+3YQKtcNHw==}
+  encatch-web-sdk@1.0.5:
+    resolution: {integrity: sha512-EVc0nmqow7AmX0lbyzzCS9Li9YAME+SfICKuKnOee8F+ArAsEQswRYYTRu1K+2D06R4WuFAacbB6PTMY4VvkIQ==}
 
   enhanced-resolve@5.18.1:
     resolution: {integrity: sha512-ZSW3ma5GkcQBIpwZTSRAI8N71Uuwgs93IezB7mf7R60tC8ZbJideoDNKjHn2O9KIlx6rkGTTEk1xUCK2E1Y2Yg==}
@@ -6759,7 +6759,7 @@ snapshots:
 
   emoji-regex@8.0.0: {}
 
-  encatch-web-sdk@1.0.2: {}
+  encatch-web-sdk@1.0.5: {}
 
   enhanced-resolve@5.18.1:
     dependencies:

@@ -12,7 +12,7 @@ import { Suspense, useRef } from "react";
 import { Outlet, useLocation } from "react-router";
 import { backendNavData } from "./nav/nav-data/nav-data-backend";
 import { frontendNavData } from "./nav/nav-data/nav-data-frontend";
-import { captureScrollFeedback } from "encatch-web-sdk";
+// import { captureScrollFeedback } from "encatch-web-sdk";
 
 /**
  * find auth by path
@@ -49,7 +49,7 @@ const Main = () => {
 			onScrollPercentChange={(percent) => {
 				console.log("[Scroll Debug] Scroll percent changed:", percent);
 
-				captureScrollFeedback(percent);
+				window.ensight.capturePageScrollEvent(percent);
 			}}
 		>
 			<AuthGuard checkAny={currentNavAuth} fallback={<Page403 />}>
