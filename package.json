@@ -41,7 +41,7 @@
 		"color": "^4.2.3",
 		"date-fns": "^4.1.0",
 		"dayjs": "^1.11.13",
-		"encatch-web-sdk": "^1.0.5",
+		"encatch-web-sdk": "^1.0.7",
 		"highlight.js": "^11.10.0",
 		"i18next": "^23.16.5",
 		"i18next-browser-languagedetector": "^7.2.1",
