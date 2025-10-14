@@ -29,9 +29,9 @@ declare global {
 				[key: string]: any;
 			},
 		) => void;
-		stopSession?: () => void;
-		startSession?: () => void;
-		resetSession?: () => void;
+		// stopSession?: () => void;
+		// startSession?: () => void;
+		// resetSession?: () => void;
 		setThemeMode?: (theme: "light" | "dark") => void;
 		setLanguage?: (language: string) => void;
 		openFeedbackById?: (feedbackConfigurationId: string, theme?: "light" | "dark", language?: string, event?: string) => void;

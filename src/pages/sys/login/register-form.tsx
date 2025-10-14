@@ -67,6 +67,15 @@ function RegisterForm() {
 			window.encatch.identify(username, traits);
 		}
 
+		// Track registration event
+		if (window.encatch && typeof window.encatch.trackEvent === "function") {
+			window.encatch.trackEvent("user_registered", {
+				username: submitValues.username,
+				email: submitValues.email,
+				hasCustomFields: Object.keys(extraFields).length > 0,
+			});
+		}
+
 		backToLogin();
 	};
 

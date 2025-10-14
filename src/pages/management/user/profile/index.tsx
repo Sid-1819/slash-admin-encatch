@@ -2,6 +2,7 @@ import CoverImage from "@/assets/images/cover/cover_4.jpg";
 import { Icon } from "@/components/icon";
 import { useUserInfo } from "@/store/userStore";
 import { themeVars } from "@/theme/theme.css";
+import { Button } from "@/ui/button";
 import { Card } from "@/ui/card";
 import { type CSSProperties, useState } from "react";
 import ConnectionsTab from "./connections-tab";
@@ -56,23 +57,44 @@ function UserProfile() {
 					</div>
 				</div>
 				<div className="z-10 min-h-[48px] w-full">
-					<div className="mx-6 flex h-full justify-center md:justify-end">
-						{tabs.map((tab, index) => (
-							<button
-								onClick={() => setcurrentTabIndex(index)}
-								key={tab.title}
-								type="button"
-								style={{
-									marginRight: index >= tabs.length - 1 ? "0px" : "40px",
-									opacity: index === currentTabIndex ? 1 : 0.5,
-									borderBottom:
-										index === currentTabIndex ? `2px solid ${themeVars.colors.palette.primary.default}` : "",
-								}}
-							>
-								{tab.icon}
-								{tab.title}
-							</button>
-						))}
+					<div className="mx-6 flex h-full items-center justify-between">
+						<div className="flex">
+							{tabs.map((tab, index) => (
+								<button
+									onClick={() => setcurrentTabIndex(index)}
+									key={tab.title}
+									type="button"
+									style={{
+										marginRight: index >= tabs.length - 1 ? "0px" : "40px",
+										opacity: index === currentTabIndex ? 1 : 0.5,
+										borderBottom: index === currentTabIndex ? `2px solid ${themeVars.colors.palette.primary.default}` : "",
+									}}
+								>
+									{tab.icon}
+									{tab.title}
+								</button>
+							))}
+						</div>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => {
+								// Track feedback button click
+								if (window.encatch && typeof window.encatch.trackEvent === "function") {
+									window.encatch.trackEvent("feedback_button_clicked", {
+										page: "user_profile",
+										source: "profile_page",
+									});
+								}
+								// Open feedback modal by ID (replace with your actual feedback configuration ID)
+								if (window.encatch && typeof window.encatch.openFeedbackById === "function") {
+									window.encatch.openFeedbackById("0199e2d9-6701-77b1-b665-3788eff6d809");
+								}
+							}}
+						>
+							<Icon icon="material-symbols:feedback-outline" size={18} className="mr-2" />
+							Give Feedback
+						</Button>
 					</div>
 				</div>
 			</Card>

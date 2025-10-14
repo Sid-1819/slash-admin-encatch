@@ -1,3 +1,5 @@
+import { Icon } from "@/components/icon";
+import { Button } from "@/ui/button";
 import AreaDownload from "./area-download";
 import BannerCard from "./banner-card";
 import { Applications, Conversion } from "./conversion_applications";
@@ -9,8 +11,29 @@ import TopRelated from "./top-related";
 import TotalCard from "./total-card";
 
 function Workbench() {
+	const handleFeedbackByName = () => {
+		// Track feedback button click
+		if (window.encatch && typeof window.encatch.trackEvent === "function") {
+			window.encatch.trackEvent("feedback_button_clicked", {
+				page: "dashboard_workbench",
+				source: "workbench_page",
+			});
+		}
+		// Open feedback modal by name (replace with your actual feedback configuration name)
+		if (window.encatch && typeof window.encatch.openFeedbackByName === "function") {
+			window.encatch.openFeedbackByName("Product Feedback Form");
+		}
+	};
+
 	return (
 		<div className="flex flex-col gap-2">
+			<div className="flex items-center justify-between mb-2">
+				<h2 className="text-2xl font-bold">Dashboard</h2>
+				<Button variant="default" size="sm" onClick={handleFeedbackByName}>
+					<Icon icon="material-symbols:feedback" size={18} className="mr-2" />
+					Share Feedback
+				</Button>
+			</div>
 			<div className="flex flex-col lg:flex-row gap-2">
 				<div className="flex-1 md:flex-2">
 					<BannerCard />
