@@ -11,13 +11,13 @@ export default function PostsListPage() {
 	// Memoized handlers for better performance
 	const handleViewDetails = useCallback((post: any) => {
 		setSelectedPost(post);
-		window.ensight.trackEvent("customEvent", {
+		window.encatch.trackEvent("customEvent", {
 			postModalOpened: "Post modal opened",
 		});
 	}, []);
 
 	const handleCloseModal = useCallback(() => {
-		window.ensight.trackEvent("customEvent", {
+		window.encatch.trackEvent("customEvent", {
 			postModalClosed: "Post modal closed",
 		});
 		setSelectedPost(null);

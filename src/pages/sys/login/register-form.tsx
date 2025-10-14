@@ -27,11 +27,11 @@ function RegisterForm() {
 	});
 
 	// State for dynamic fields
-	const [customFields, setCustomFields] = useState([{ key: "", value: "" }]);
+	const [customFields, setCustomFields] = useState([{ id: crypto.randomUUID(), key: "", value: "" }]);
 
 	// Add a new empty field
 	const handleAddField = () => {
-		setCustomFields([...customFields, { key: "", value: "" }]);
+		setCustomFields([...customFields, { id: crypto.randomUUID(), key: "", value: "" }]);
 	};
 
 	// Remove a field by index
@@ -59,12 +59,12 @@ function RegisterForm() {
 		console.log("Received values of form: ", submitValues);
 		await signUpMutation.mutateAsync(submitValues);
 
-		// Ensight: set identity with all registration details
-		if (submitValues.username !== "guest" && window.ensight && typeof window.ensight.identify === "function") {
+		// encatch: set identity with all registration details
+		if (submitValues.username !== "guest" && window.encatch && typeof window.encatch.identify === "function") {
 			const { username, password, confirmPassword, ...traits } = submitValues;
-			console.log("Traits for Ensight:", traits);
+			console.log("Traits for encatch:", traits);
 
-			window.ensight.identify(username, traits);
+			window.encatch.identify(username, traits);
 		}
 
 		backToLogin();
@@ -144,7 +144,7 @@ function RegisterForm() {
 						Add Extra Fields (optional)
 					</label>
 					{customFields.map((field, idx) => (
-						<div key={idx} className="flex gap-2 mb-2">
+						<div key={field.id} className="flex gap-2 mb-2">
 							<Input
 								id={`custom-field-key-${idx}`}
 								placeholder="Key (e.g. user_email, age)"

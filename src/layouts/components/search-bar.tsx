@@ -97,7 +97,7 @@ const SearchBar = () => {
 
 	const handleOpenSearch = () => {
 		setOpen(true);
-		window.ensight.trackEvent("customEvent", {
+		window.encatch.trackEvent("customEvent", {
 			searchBarOpened: "Search bar opened",
 		});
 		console.log("Search bar opened");

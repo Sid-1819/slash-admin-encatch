@@ -49,7 +49,7 @@ const Main = () => {
 			onScrollPercentChange={(percent) => {
 				console.log("[Scroll Debug] Scroll percent changed:", percent);
 
-				window.ensight.capturePageScrollEvent(percent);
+				window.encatch.capturePageScrollEvent(percent.toString());
 			}}
 		>
 			<AuthGuard checkAny={currentNavAuth} fallback={<Page403 />}>

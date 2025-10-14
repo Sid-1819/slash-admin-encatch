@@ -74,11 +74,11 @@ export const useSignIn = () => {
 			setUserToken({ accessToken, refreshToken });
 			setUserInfo(user);
 
-			// Ensight: set identity with username and dynamic fields
-			if (user.username !== "guest" && window.ensight && typeof window.ensight.identify === "function") {
+			// encatch: set identity with username and dynamic fields
+			if (user.username !== "guest" && window.encatch && typeof window.encatch.identify === "function") {
 				const { username, password, confirmPassword, ...properties } = user;
-				console.log("Ensight properties:", properties);
-				window.ensight.identify(username, properties);
+				console.log("encatch properties:", properties);
+				window.encatch.identify(username, properties);
 			}
 
 			return { ...res, user };

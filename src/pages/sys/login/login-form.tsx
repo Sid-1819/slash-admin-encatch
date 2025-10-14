@@ -44,7 +44,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 			});
 		} finally {
 			setLoading(false);
-			window.ensight.trackEvent("customEvent", {
+			window.encatch.trackEvent("customEvent", {
 				login: "User logged in",
 			});
 		}
