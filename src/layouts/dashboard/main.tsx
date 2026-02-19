@@ -47,9 +47,9 @@ const Main = () => {
 			className={cn("flex w-full grow ", heightClass)}
 			ref={mainRef}
 			onScrollPercentChange={(percent) => {
-				console.log("[Scroll Debug] Scroll percent changed:", percent);
-
-				window.encatch.capturePageScrollEvent(percent.toString());
+				if (window.encatch?.capturePageScrollEvent) {
+					window.encatch.capturePageScrollEvent(percent.toString());
+				}
 			}}
 		>
 			<AuthGuard checkAny={currentNavAuth} fallback={<Page403 />}>

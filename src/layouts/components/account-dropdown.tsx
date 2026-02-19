@@ -5,6 +5,7 @@ import { Button } from "@/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/ui/dropdown-menu";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router";
+import _refiner from "refiner-js";
 
 /**
  * Account Dropdown
@@ -19,6 +20,7 @@ export default function AccountDropdown() {
 		try {
 			clearUserInfoAndToken();
 			backToLogin();
+			_refiner("resetUser");
 			window.encatch.trackEvent("customEvent", {
 				logout: "User logged out",
 			});

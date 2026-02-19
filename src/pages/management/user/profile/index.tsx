@@ -1,5 +1,6 @@
 import CoverImage from "@/assets/images/cover/cover_4.jpg";
 import { Icon } from "@/components/icon";
+import { ENCATCH_FEEDBACK_FORM_ID } from "@/lib/encatch";
 import { useUserInfo } from "@/store/userStore";
 import { themeVars } from "@/theme/theme.css";
 import { Button } from "@/ui/button";
@@ -79,16 +80,12 @@ function UserProfile() {
 							variant="outline"
 							size="sm"
 							onClick={() => {
-								// Track feedback button click
-								if (window.encatch && typeof window.encatch.trackEvent === "function") {
+								if (window.encatch) {
 									window.encatch.trackEvent("feedback_button_clicked", {
 										page: "user_profile",
 										source: "profile_page",
 									});
-								}
-								// Open feedback modal by ID (replace with your actual feedback configuration ID)
-								if (window.encatch && typeof window.encatch.openFeedbackById === "function") {
-									window.encatch.openFeedbackById("0199e2d9-6701-77b1-b665-3788eff6d809");
+									window.encatch.openFeedbackById?.(ENCATCH_FEEDBACK_FORM_ID);
 								}
 							}}
 						>

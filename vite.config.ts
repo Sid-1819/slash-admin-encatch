@@ -40,6 +40,31 @@ export default defineConfig(({ mode }) => {
 					rewrite: (path) => path.replace(/^\/api/, ""),
 					secure: false,
 				},
+				// Encatch – same pattern as web-sdk-tester next.config.ts (rewrites to app.dev.encatch.com)
+				// 1) API: so track-event etc. go through proxy (avoids CORS on x-device-id)
+				"/engage-product/encatch/api": {
+					target: "https://app.dev.encatch.com",
+					changeOrigin: true,
+					secure: true,
+				},
+				// 2) Form/iframe: so iframe URL stays on origin and gets proxied (avoids 404)
+				"/engage-product/encatch": {
+					target: "https://app.dev.encatch.com",
+					changeOrigin: true,
+					secure: true,
+				},
+				// 3) SDK script: so script loads from origin (avoids CORS on encatch.js) – must be before /s
+				"/s/sdk/v1": {
+					target: "https://app.dev.encatch.com",
+					changeOrigin: true,
+					secure: true,
+				},
+				// 4) Form iframe: SDK loads form at /s/web-sdk-form?formId=... – proxy so iframe shows form, not 404
+				// "/s": {
+				// 	target: "https://app.dev.encatch.com",
+				// 	changeOrigin: true,
+				// 	secure: true,
+				// },
 			},
 		},
 

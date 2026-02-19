@@ -6,21 +6,32 @@ import { http, HttpResponse } from "msw";
 import { DB_MENU, DB_PERMISSION, DB_ROLE, DB_ROLE_PERMISSION, DB_USER, DB_USER_ROLE } from "../assets_backup";
 
 const signIn = http.post(`/api${UserApi.SignIn}`, async ({ request }) => {
-	const { username, password } = (await request.json()) as Record<string, string>;
+	const { username, password } = (await request.json()) as Record<string, string | undefined>;
 
-	const user = DB_USER.find((item) => item.username === username);
+	const foundUser = DB_USER.find((item) => item.username === username);
 
-	if (!user || user.password !== password) {
+	// If user doesn't exist, create a new user on the fly
+	const currentUser = foundUser ?? {
+		id: `user_${username ?? ""}_id`,
+		username: username ?? "",
+		password: password ?? "",
+		avatar: faker.image.avatarGitHub(),
+		email: `${username ?? ""}@slash.com`,
+	};
+
+	// Validate password for existing user
+	if (foundUser && password && foundUser.password !== password) {
 		return HttpResponse.json({
 			status: 10001,
 			message: "Incorrect username or password.",
 		});
 	}
-	// delete password
-	const { password: _, ...userWithoutPassword } = user;
 
-	// user role
-	const roles = DB_USER_ROLE.filter((item) => item.userId === user.id).map((item) => DB_ROLE.find((role) => role.id === item.roleId));
+	// delete password
+	const { password: _, ...userWithoutPassword } = currentUser;
+
+	// user role (only for existing users in DB_USER_ROLE)
+	const roles = DB_USER_ROLE.filter((item) => item.userId === currentUser.id).map((item) => DB_ROLE.find((role) => role.id === item.roleId));
 
 	// user permissions
 	const permissions = DB_ROLE_PERMISSION.filter((item) => roles.some((role) => role?.id === item.roleId)).map((item) =>
@@ -33,7 +44,7 @@ const signIn = http.post(`/api${UserApi.SignIn}`, async ({ request }) => {
 		status: ResultStuts.SUCCESS,
 		message: "",
 		data: {
-			user: { ...userWithoutPassword, roles, permissions, menu },
+			user: { ...userWithoutPassword, roles: roles.filter(Boolean), permissions: permissions.filter(Boolean), menu },
 			accessToken: faker.string.uuid(),
 			refreshToken: faker.string.uuid(),
 		},

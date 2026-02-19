@@ -20,6 +20,9 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.1.0)
+      '@encatch/web-sdk':
+        specifier: 1.0.0-beta.1
+        version: 1.0.0-beta.1
       '@fontsource-variable/inter':
         specifier: ^5.1.0
         version: 5.2.5
@@ -164,6 +167,9 @@ importers:
       react-use:
         specifier: ^17.5.1
         version: 17.6.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      refiner-js:
+        specifier: ^1.2.4
+        version: 1.2.4
       screenfull:
         specifier: ^6.0.2
         version: 6.0.2
@@ -562,6 +568,10 @@ packages:
 
   '@emotion/unitless@0.8.1':
     resolution: {integrity: sha512-KOEGMu6dmJZtpadb476IsZBclKvILjopjUii3V+7MnXIQCYh8W3NgNcgwo21n9LXZX6EDIKvqfjYxXebDwxKmQ==}
+
+  '@encatch/web-sdk@1.0.0-beta.1':
+    resolution: {integrity: sha512-iQD6wfd2vSQqPIuJ/mPbcwjOo60bkJxKF7hijPRd1jid3ZN05tvKyML24WfA69Mpp0E1tuTALusZnOcjWzXPfw==}
+    engines: {node: '>=18'}
 
   '@esbuild/aix-ppc64@0.25.3':
     resolution: {integrity: sha512-W8bFfPA8DowP8l//sxjJLSLkD8iEjMc7cBVyP+u4cEv9sM7mdUCkgsj+t0n/BWPFtv7WWCN5Yzj0N6FJNUUqBQ==}
@@ -3794,6 +3804,9 @@ packages:
     resolution: {integrity: sha512-6tDA8g98We0zd0GvVeMT9arEOnTw9qM03L9cJXaCjrip1OO764RDBLBfrB4cwzNGDj5OA5ioymC9GkizgWJDUg==}
     engines: {node: '>=8'}
 
+  refiner-js@1.2.4:
+    resolution: {integrity: sha512-xiUKWmxA0qb+5iB2nQjgTTOGNtdYUscLTXkCNqohl71P7WkaKcnm6P5vzcafZWroAC8xNRkm82AvdMeuJ42XRw==}
+
   regenerator-runtime@0.14.1:
     resolution: {integrity: sha512-dYnhHh0nJoMfnkZs6GmmhFknAGRrLznOu5nc9ML+EJxGvrx6H7teuevqVqCuPcPK//3eDrrjQhehXVx9cnkGdw==}
 
@@ -4793,6 +4806,8 @@ snapshots:
   '@emotion/unitless@0.7.5': {}
 
   '@emotion/unitless@0.8.1': {}
+
+  '@encatch/web-sdk@1.0.0-beta.1': {}
 
   '@esbuild/aix-ppc64@0.25.3':
     optional: true
@@ -8168,6 +8183,8 @@ snapshots:
     dependencies:
       indent-string: 4.0.0
       strip-indent: 3.0.0
+
+  refiner-js@1.2.4: {}
 
   regenerator-runtime@0.14.1: {}
 

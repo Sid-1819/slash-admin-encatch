@@ -28,7 +28,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 	const form = useForm<SignInReq>({
 		defaultValues: {
 			username: DB_USER[0].username,
-			password: DB_USER[0].password,
+			password: "",
 		},
 	});
 
@@ -77,12 +77,11 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 					<FormField
 						control={form.control}
 						name="password"
-						rules={{ required: t("sys.login.passwordPlaceholder") }}
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>{t("sys.login.password")}</FormLabel>
+								<FormLabel>{t("sys.login.password")} (Optional)</FormLabel>
 								<FormControl>
-									<Input type="password" placeholder={DB_USER[0].password} {...field} suppressHydrationWarning />
+									<Input type="password" placeholder={t("sys.login.passwordPlaceholder")} {...field} suppressHydrationWarning />
 								</FormControl>
 								<FormMessage />
 							</FormItem>

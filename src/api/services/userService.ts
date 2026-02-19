@@ -1,9 +1,10 @@
 import type { UserInfo, UserToken } from "#/entity";
+import { DB_USER } from "@/_mock/assets_backup";
 import apiClient from "../apiClient";
 
 export interface SignInReq {
 	username: string;
-	password: string;
+	password?: string;
 }
 
 export interface SignUpReq extends SignInReq {
@@ -31,16 +32,36 @@ function setLocalUsers(users: any[]) {
 }
 
 const signin = async (data: SignInReq) => {
-	if (data.username === "guest" && data.password === "guest") {
-		return {
-			access_token: "test-token",
-			refresh_token: "test-refresh-token",
-			user: data,
+	// Check localStorage first, then fallback to DB_USER
+	const localUsers = getLocalUsers();
+	const allUsers = localUsers.length > 0 ? localUsers : DB_USER;
+
+	// Try to find existing user
+	let user = allUsers.find((u: any) => {
+		if (u.username !== data.username) return false;
+		// If password is provided, validate it; otherwise allow login without password
+		return !data.password || u.password === data.password;
+	});
+
+	// If user doesn't exist, create a new user on the fly
+	if (!user) {
+		// If password is provided for non-existent user, validate against it (but allow any username)
+		// For passwordless login, create user automatically
+		user = {
+			id: `user_${data.username}_id`,
+			username: data.username,
+			email: `${data.username}@slash.com`,
+			avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.username}`,
+			password: data.password || "",
 		};
+		// Optionally save to localStorage for persistence
+		const updatedUsers = [...allUsers, user];
+		setLocalUsers(updatedUsers);
+	} else if (data.password && user.password !== data.password) {
+		// If password is provided and doesn't match, throw error
+		throw new Error("Invalid credentials");
 	}
-	const users = getLocalUsers();
-	const user = users.find((u: any) => u.username === data.username && u.password === data.password);
-	if (!user) throw new Error("Invalid credentials");
+
 	// Simulate token and user info
 	return {
 		access_token: "test-token",
