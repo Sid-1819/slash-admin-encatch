@@ -101,9 +101,6 @@ importers:
       dayjs:
         specifier: ^1.11.13
         version: 1.11.13
-      encatch-web-sdk:
-        specifier: ^1.0.7
-        version: 1.0.7
       highlight.js:
         specifier: ^11.10.0
         version: 11.11.1
@@ -2509,9 +2506,6 @@ packages:
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
-
-  encatch-web-sdk@1.0.7:
-    resolution: {integrity: sha512-oM5u7aPs5eO2niOWCazip4frTgG/2pPsKQ/bjl7TZoFITAKuoDZrmaKF9y8jCGkXuJunLDQSYbGtH5CdMPVjgg==}
 
   enhanced-resolve@5.18.1:
     resolution: {integrity: sha512-ZSW3ma5GkcQBIpwZTSRAI8N71Uuwgs93IezB7mf7R60tC8ZbJideoDNKjHn2O9KIlx6rkGTTEk1xUCK2E1Y2Yg==}
@@ -6773,8 +6767,6 @@ snapshots:
   electron-to-chromium@1.5.141: {}
 
   emoji-regex@8.0.0: {}
-
-  encatch-web-sdk@1.0.7: {}
 
   enhanced-resolve@5.18.1:
     dependencies:
