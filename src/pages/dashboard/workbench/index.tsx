@@ -1,5 +1,5 @@
 import { Icon } from "@/components/icon";
-import { ENCATCH_FEEDBACK_FORM_ID } from "@/lib/encatch";
+import { ENCATCH_FEEDBACK_FORM_ID, _encatch } from "@/lib/encatch";
 import { Button } from "@/ui/button";
 import AreaDownload from "./area-download";
 import BannerCard from "./banner-card";
@@ -10,20 +10,12 @@ import TopAuthor from "./top-authors";
 import TopInstalled from "./top-installed";
 import TopRelated from "./top-related";
 import TotalCard from "./total-card";
-import _refiner from "refiner-js";
+// import _refiner from "refiner-js";
 
 function Workbench() {
 	const handleOpenFeedback = () => {
-		// _refiner("trackEvent", "ShareFeedbackClicked");
-		// _refiner("showForm", "newPromoter");
-		console.log("window.encatch", window.encatch);
-		// if (window.encatch) {
-		window.encatch.trackEvent("feedback_button_clicked", {
-			page: "dashboard_workbench",
-			source: "workbench_page",
-		});
-		window.encatch.openFeedbackById?.(ENCATCH_FEEDBACK_FORM_ID);
-		// }
+		_encatch.trackEvent("feedback_button_clicked");
+		_encatch.showForm(ENCATCH_FEEDBACK_FORM_ID);
 	};
 
 	return (

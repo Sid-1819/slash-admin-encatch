@@ -1,3 +1,4 @@
+import { _encatch } from "@/lib/encatch";
 import { useState, useCallback } from "react";
 import PostCard from "./post-card";
 import PostModal from "./post-modal";
@@ -11,15 +12,11 @@ export default function PostsListPage() {
 	// Memoized handlers for better performance
 	const handleViewDetails = useCallback((post: any) => {
 		setSelectedPost(post);
-		window.encatch.trackEvent("customEvent", {
-			postModalOpened: "Post modal opened",
-		});
+		_encatch.trackEvent("post_modal_opened");
 	}, []);
 
 	const handleCloseModal = useCallback(() => {
-		window.encatch.trackEvent("customEvent", {
-			postModalClosed: "Post modal closed",
-		});
+		_encatch.trackEvent("post_modal_closed");
 		setSelectedPost(null);
 	}, []);
 

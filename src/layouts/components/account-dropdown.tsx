@@ -1,11 +1,12 @@
 import { useLoginStateContext } from "@/pages/sys/login/providers/login-provider";
 import { useRouter } from "@/routes/hooks";
+import { _encatch } from "@/lib/encatch";
 import { useUserActions, useUserInfo } from "@/store/userStore";
 import { Button } from "@/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/ui/dropdown-menu";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router";
-import _refiner from "refiner-js";
+// import _refiner from "refiner-js";
 
 /**
  * Account Dropdown
@@ -20,10 +21,8 @@ export default function AccountDropdown() {
 		try {
 			clearUserInfoAndToken();
 			backToLogin();
-			_refiner("resetUser");
-			window.encatch.trackEvent("customEvent", {
-				logout: "User logged out",
-			});
+			// _refiner("resetUser");
+			_encatch.trackEvent("user_logged_out");
 		} catch (error) {
 			console.log(error);
 		} finally {

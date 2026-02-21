@@ -1,4 +1,5 @@
 import { Icon } from "@/components/icon";
+import { _encatch } from "@/lib/encatch";
 import useLocale from "@/locales/use-locale";
 import { useRouter } from "@/routes/hooks";
 import { Badge } from "@/ui/badge";
@@ -97,9 +98,7 @@ const SearchBar = () => {
 
 	const handleOpenSearch = () => {
 		setOpen(true);
-		window.encatch.trackEvent("customEvent", {
-			searchBarOpened: "Search bar opened",
-		});
+		_encatch.trackEvent("search_bar_opened");
 		console.log("Search bar opened");
 	};
 

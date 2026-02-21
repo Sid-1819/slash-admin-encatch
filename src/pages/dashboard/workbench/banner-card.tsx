@@ -1,6 +1,7 @@
 import Character3 from "@/assets/images/characters/character_3.png";
 import { Icon } from "@/components/icon";
 import { GLOBAL_CONFIG } from "@/global-config";
+import { _encatch } from "@/lib/encatch";
 import { useUserInfo } from "@/store/userStore";
 import { themeVars } from "@/theme/theme.css";
 
@@ -35,10 +36,7 @@ export default function BannerCard() {
 					className="font-mediumtext-black m-auto flex items-center justify-center rounded-lg px-2 py-1 shadow-none md:m-0"
 					style={{ backgroundColor: themeVars.colors.palette.primary.default, color: themeVars.colors.common.white }}
 					onClick={() => {
-						window.encatch?.trackEvent("join_discord_clicked", {
-							source: "banner_card",
-							url: "https://discord.gg/fXemAXVNDa",
-						});
+						_encatch.trackEvent("join_discord_clicked");
 						window.open("https://discord.gg/fXemAXVNDa");
 					}}
 				>

@@ -1,4 +1,5 @@
 import userService from "@/api/services/userService";
+import { _encatch, mapTraitsToSdk } from "@/lib/encatch";
 import { Button } from "@/ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/ui/form";
 import { Input } from "@/ui/input";
@@ -60,21 +61,13 @@ function RegisterForm() {
 		await signUpMutation.mutateAsync(submitValues);
 
 		// encatch: set identity with all registration details
-		if (submitValues.username !== "guest" && window.encatch && typeof window.encatch.identify === "function") {
+		if (submitValues.username !== "guest") {
 			const { username, password, confirmPassword, ...traits } = submitValues;
-			console.log("Traits for encatch:", traits);
-
-			window.encatch.identify(username, traits);
+			_encatch.identifyUser(username, mapTraitsToSdk(traits));
 		}
 
 		// Track registration event
-		if (window.encatch && typeof window.encatch.trackEvent === "function") {
-			window.encatch.trackEvent("user_registered", {
-				username: submitValues.username,
-				email: submitValues.email,
-				hasCustomFields: Object.keys(extraFields).length > 0,
-			});
-		}
+		_encatch.trackEvent("user_registered");
 
 		backToLogin();
 	};

@@ -94,6 +94,7 @@
 			"custom_ui_components": "自定义UI组件",
 			"workbench": "工作台",
 			"analysis": "分析",
+			"encatch_test": "Encatch 测试",
 			"management": "管理",
 			"user": {
 				"index": "用户",

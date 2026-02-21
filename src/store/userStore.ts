@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 import userService, { type SignInReq } from "@/api/services/userService";
-
+import { _encatch, mapTraitsToSdk } from "@/lib/encatch";
 import { toast } from "sonner";
 import type { UserInfo, UserToken } from "#/entity";
 import { StorageEnum } from "#/enum";
@@ -75,10 +75,9 @@ export const useSignIn = () => {
 			setUserInfo(user);
 
 			// encatch: set identity with username and dynamic fields
-			if (user.username !== "guest" && window.encatch && typeof window.encatch.identify === "function") {
+			if (user.username !== "guest") {
 				const { username, password, confirmPassword, ...properties } = user;
-				console.log("encatch properties:", properties);
-				window.encatch.identify(username, properties);
+				_encatch.identifyUser(username, mapTraitsToSdk(properties));
 			}
 
 			return { ...res, user };

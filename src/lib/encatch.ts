@@ -1,22 +1,24 @@
 /**
  * Encatch Web SDK integration for Slash Admin.
- * Uses @encatch/web-sdk and exposes a window.encatch adapter for backward
- * compatibility with existing call sites (trackEvent, identify, openFeedbackById, etc.).
+ * Uses @encatch/web-sdk directly; no adapter. Call _encatch methods after initEncatch().
  */
 
 import { _encatch } from "@encatch/web-sdk";
 import type { UserTraits } from "@encatch/web-sdk";
 
-const API_KEY = "en_dev_RnZNuDSmCeGDz6TflPFMhGYBl1nbY5tYObyG6ZLNlFQnAuX80QDvrAyuypPSDJRNnTcwtqD_5fd0b5a3";
+const API_KEY = import.meta.env.VITE_ENCATCH_SDK_API_KEY;
 
-/** Default feedback form ID (from env or fallback). Use when opening feedback on button click. */
-export const ENCATCH_FEEDBACK_FORM_ID = "8c6893be-8189-4d03-bb73-e0488670fc4e";
+/** Default feedback form ID (from env or fallback). Use when opening feedback. */
+export const ENCATCH_FEEDBACK_FORM_ID = import.meta.env.VITE_ENCATCH_FEEDBACK_FORM_ID;
+
+/** Re-export SDK for direct usage. */
+export { _encatch };
 
 /**
  * Map legacy trait keys to @encatch/web-sdk UserTraits format.
- * Legacy: $set, $set_once, $counter, $unset → New: $set, $setOnce, $increment, $unset
+ * Use when you have traits as { $set, $set_once, $counter, $unset } and need to pass to _encatch.identifyUser.
  */
-function mapTraitsToSdk(traits: Record<string, unknown> | undefined): UserTraits | undefined {
+export function mapTraitsToSdk(traits: Record<string, unknown> | undefined): UserTraits | undefined {
 	if (!traits || typeof traits !== "object") return undefined;
 	const out: UserTraits = {};
 	if (traits.$set && typeof traits.$set === "object") out.$set = traits.$set as Record<string, unknown>;
@@ -36,83 +38,21 @@ function mapTraitsToSdk(traits: Record<string, unknown> | undefined): UserTraits
 }
 
 /**
- * Create the window.encatch adapter that maps legacy API to @encatch/web-sdk.
- */
-function createEncatchAdapter() {
-	return {
-		_i: [] as unknown[],
-		apiKey: _encatch._apiKey ?? "",
-		config: _encatch._config as Record<string, unknown>,
-		chunkUrlLoader: (_url: string) => _url,
-
-		init: () => {
-			// SDK is initialized in initEncatch(); no-op here for type compatibility
-		},
-
-		trackEvent(eventName: string, _properties?: Record<string, unknown>) {
-			_encatch.trackEvent(eventName);
-		},
-
-		identify(userId: string, traits?: Record<string, unknown>) {
-			const sdkTraits = mapTraitsToSdk(traits);
-			_encatch.identifyUser(userId, sdkTraits);
-		},
-
-		setThemeMode(theme: "light" | "dark") {
-			_encatch.setTheme(theme);
-		},
-
-		setLanguage(language: string) {
-			_encatch.setLocale(language);
-		},
-
-		openFeedbackById(feedbackConfigurationId: string) {
-			_encatch.showForm(feedbackConfigurationId);
-		},
-
-		openFeedbackByName(_feedbackConfigurationName: string) {
-			console.warn("[Encatch] openFeedbackByName is not supported by @encatch/web-sdk. Use openFeedbackById with the feedback configuration ID.");
-		},
-
-		verifyFeedbackIds(_feedbackConfigurationIds: string[]): string[] {
-			return [];
-		},
-
-		async forceFetchEligibleFeedbacks(): Promise<void> {
-			// No-op in @encatch/web-sdk
-		},
-
-		capturePageScrollEvent(_scrollPercent: string) {
-			// No-op: page scroll tracking removed
-		},
-
-		_internal: {} as EncatchGlobal["_internal"],
-	};
-}
-
-/**
- * Initialize the Encatch SDK and attach the window.encatch adapter.
- * Call once when the app mounts (browser only).
+ * Initialize the Encatch SDK. Call once when the app mounts (browser only).
  */
 export function initEncatch(): void {
 	if (typeof window === "undefined") return;
-	if (_encatch._initialized) {
-		(window as Window & { encatch?: unknown }).encatch = createEncatchAdapter();
-		return;
-	}
+	if (_encatch._initialized) return;
 	const apiKey = API_KEY?.trim();
 	if (!apiKey) {
-		console.warn("[Encatch] VITE_ENCATCH_API_KEY is not set. Encatch SDK will not be initialized.");
-		(window as Window & { encatch?: unknown }).encatch = createEncatchAdapter();
+		console.warn("[Encatch] API key is not set. Encatch SDK will not be initialized.");
 		return;
 	}
-	// Use same origin so Vite proxy serves script (avoids CORS); API goes through proxy unless overridden
 	const origin = window.location.origin;
-	const apiBaseUrl = (typeof import.meta.env?.VITE_ENCATCH_API_BASE_URL === "string" && import.meta.env.VITE_ENCATCH_API_BASE_URL.trim()) || origin;
+	const apiBaseUrl = origin;
 	_encatch.init(apiKey, {
 		webHost: origin,
 		apiBaseUrl,
 		theme: "system",
 	});
-	(window as Window & { encatch?: unknown }).encatch = createEncatchAdapter();
 }

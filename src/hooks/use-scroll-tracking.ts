@@ -29,10 +29,6 @@ export function useScrollTracking(options: ScrollTrackingOptions = {}) {
 			for (const threshold of thresholds) {
 				if (scrollPercent >= threshold && !trackedThresholds.current.has(threshold)) {
 					trackedThresholds.current.add(threshold);
-
-					if (window.encatch && typeof window.encatch.capturePageScrollEvent === "function") {
-						window.encatch.capturePageScrollEvent(`${threshold}%`);
-					}
 				}
 			}
 		};

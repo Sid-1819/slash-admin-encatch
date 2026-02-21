@@ -2,6 +2,7 @@ import { DB_USER } from "@/_mock/assets_backup";
 import type { SignInReq } from "@/api/services/userService";
 import { Icon } from "@/components/icon";
 import { GLOBAL_CONFIG } from "@/global-config";
+import { _encatch } from "@/lib/encatch";
 import { useSignIn } from "@/store/userStore";
 import { Button } from "@/ui/button";
 import { Checkbox } from "@/ui/checkbox";
@@ -44,9 +45,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 			});
 		} finally {
 			setLoading(false);
-			window.encatch.trackEvent("customEvent", {
-				login: "User logged in",
-			});
+			_encatch.trackEvent("user_logged_in");
 		}
 	};
 
@@ -60,9 +59,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 			});
 		} finally {
 			setLoading(false);
-			window.encatch.trackEvent("customEvent", {
-				login: "Guest logged in",
-			});
+			_encatch.trackEvent("guest_logged_in");
 		}
 	};
 

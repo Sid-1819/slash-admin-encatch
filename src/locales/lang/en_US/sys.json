@@ -136,7 +136,8 @@
 				"index": "User",
 				"profile": "Profile"
 			},
-			"workbench": "Workbench"
+			"workbench": "Workbench",
+			"encatch_test": "Encatch Test"
 		},
 		"settings": {
 			"accordion": "Accordion Menu",

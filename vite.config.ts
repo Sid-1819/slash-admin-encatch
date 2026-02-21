@@ -54,17 +54,22 @@ export default defineConfig(({ mode }) => {
 					secure: true,
 				},
 				// 3) SDK script: so script loads from origin (avoids CORS on encatch.js) – must be before /s
-				"/s/sdk/v1": {
-					target: "https://app.dev.encatch.com",
-					changeOrigin: true,
-					secure: true,
-				},
-				// 4) Form iframe: SDK loads form at /s/web-sdk-form?formId=... – proxy so iframe shows form, not 404
-				// "/s": {
+				// "/s/sdk/v1": {
 				// 	target: "https://app.dev.encatch.com",
 				// 	changeOrigin: true,
 				// 	secure: true,
 				// },
+				// // 4) Form iframe: SDK loads form at /s/web-sdk-form?formId=... – proxy so iframe shows form, not 404
+				// "/s/web-sdk-form": {
+				// 	target: "https://app.dev.encatch.com",
+				// 	changeOrigin: true,
+				// 	secure: true,
+				// },
+				"/s/": {
+					target: "https://app.dev.encatch.com",
+					changeOrigin: true,
+					secure: true,
+				},
 			},
 		},
 

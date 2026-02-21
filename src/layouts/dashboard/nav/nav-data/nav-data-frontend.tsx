@@ -16,6 +16,11 @@ export const frontendNavData: NavProps["data"] = [
 				path: "/analysis",
 				icon: <Icon icon="local:ic-analysis" size="24" />,
 			},
+			{
+				title: "sys.nav.encatch_test",
+				path: "/encatch-test",
+				icon: <Icon icon="solar:bug-minimalistic-bold-duotone" size="24" />,
+			},
 		],
 	},
 	{

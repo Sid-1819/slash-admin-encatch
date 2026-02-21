@@ -1,6 +1,6 @@
 import CoverImage from "@/assets/images/cover/cover_4.jpg";
 import { Icon } from "@/components/icon";
-import { ENCATCH_FEEDBACK_FORM_ID } from "@/lib/encatch";
+import { ENCATCH_FEEDBACK_FORM_ID, _encatch } from "@/lib/encatch";
 import { useUserInfo } from "@/store/userStore";
 import { themeVars } from "@/theme/theme.css";
 import { Button } from "@/ui/button";
@@ -80,13 +80,8 @@ function UserProfile() {
 							variant="outline"
 							size="sm"
 							onClick={() => {
-								if (window.encatch) {
-									window.encatch.trackEvent("feedback_button_clicked", {
-										page: "user_profile",
-										source: "profile_page",
-									});
-									window.encatch.openFeedbackById?.(ENCATCH_FEEDBACK_FORM_ID);
-								}
+								_encatch.trackEvent("feedback_button_clicked");
+								_encatch.showForm(ENCATCH_FEEDBACK_FORM_ID);
 							}}
 						>
 							<Icon icon="material-symbols:feedback-outline" size={18} className="mr-2" />

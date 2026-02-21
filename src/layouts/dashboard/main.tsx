@@ -43,15 +43,7 @@ const Main = () => {
 			: "h-[calc(100vh-var(--layout-header-height))]";
 
 	return (
-		<ScrollArea
-			className={cn("flex w-full grow ", heightClass)}
-			ref={mainRef}
-			onScrollPercentChange={(percent) => {
-				if (window.encatch?.capturePageScrollEvent) {
-					window.encatch.capturePageScrollEvent(percent.toString());
-				}
-			}}
-		>
+		<ScrollArea className={cn("flex w-full grow ", heightClass)} ref={mainRef}>
 			<AuthGuard checkAny={currentNavAuth} fallback={<Page403 />}>
 				<main
 					data-slot="slash-layout-main"
