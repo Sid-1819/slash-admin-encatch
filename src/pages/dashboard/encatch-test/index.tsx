@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/
 import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
 import { Text } from "@/ui/typography";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
 	return (
@@ -24,8 +24,23 @@ export default function EncatchTestPage() {
 	const [trackResult, setTrackResult] = useState<string | null>(null);
 
 	const [identifyUserId, setIdentifyUserId] = useState("user_123");
-	const [identifyTraits, setIdentifyTraits] = useState('{"$set":{"email":"test@example.com","name":"Test User"}}');
+	const [identifyTraits, setIdentifyTraits] = useState('{"$set":{"email":"user_123@example.com","name":"Test User"}}');
 	const [identifyResult, setIdentifyResult] = useState<string | null>(null);
+
+	// Keep traits email in sync with user ID
+	useEffect(() => {
+		const email = `${(identifyUserId.trim() || "anonymous").replace(/\s+/g, "_")}@example.com`;
+		setIdentifyTraits((prev) => {
+			try {
+				const parsed = JSON.parse(prev) as Record<string, unknown>;
+				const set = (parsed.$set as Record<string, unknown>) ?? {};
+				parsed.$set = { ...set, email };
+				return JSON.stringify(parsed, null, 2);
+			} catch {
+				return JSON.stringify({ $set: { email } }, null, 2);
+			}
+		});
+	}, [identifyUserId]);
 
 	const [language, setLanguage] = useState("en");
 	const [languageResult, setLanguageResult] = useState<string | null>(null);
