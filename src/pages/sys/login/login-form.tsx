@@ -50,6 +50,22 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 		}
 	};
 
+	const handleGuestLogin = async () => {
+		setLoading(true);
+		try {
+			await signIn({ username: "guest", password: "" });
+			navigatge(GLOBAL_CONFIG.defaultRoute, { replace: true });
+			toast.success("Sign in success!", {
+				closeButton: true,
+			});
+		} finally {
+			setLoading(false);
+			window.encatch.trackEvent("customEvent", {
+				login: "Guest logged in",
+			});
+		}
+	};
+
 	return (
 		<div className={cn("flex flex-col gap-6", className)}>
 			<Form {...form} {...props}>
@@ -102,9 +118,15 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 					</div>
 
 					{/* 登录按钮 */}
-					<Button type="submit" className="w-full">
+					<Button type="submit" className="w-full" disabled={loading}>
 						{loading && <Loader2 className="animate-spin mr-2" />}
 						{t("sys.login.loginButton")}
+					</Button>
+
+					{/* Guest Login */}
+					<Button type="button" variant="outline" className="w-full" onClick={handleGuestLogin} disabled={loading}>
+						{loading && <Loader2 className="animate-spin mr-2" />}
+						{t("sys.login.guestLogin")}
 					</Button>
 
 					{/* 手机登录/二维码登录 */}

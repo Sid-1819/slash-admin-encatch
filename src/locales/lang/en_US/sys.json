@@ -35,6 +35,7 @@
 			"forgetFormSecondTitle": "Please enter the email address associated with your account and We will email you a link to reset your password.",
 			"forgetFormTitle": "Reset password",
 			"forgetPassword": "Forget Password?",
+			"guestLogin": "Guest Login",
 			"loginButton": "Sign in",
 			"loginSuccessDesc": "Welcome back",
 			"loginSuccessTitle": "Login successful",

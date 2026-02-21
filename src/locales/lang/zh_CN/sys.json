@@ -39,6 +39,7 @@
 			"scanSign": "扫码后点击'确认'，即可完成登录",
 			"forgetFormSecondTitle": "请输入与您的帐户关联的电子邮件地址，我们将通过电子邮件向您发送重置密码的链接。",
 
+			"guestLogin": "游客登录",
 			"loginButton": "登录",
 			"registerButton": "注册",
 			"rememberMe": "记住我",
