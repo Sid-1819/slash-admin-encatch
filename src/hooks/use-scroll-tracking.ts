@@ -30,17 +30,8 @@ export function useScrollTracking(options: ScrollTrackingOptions = {}) {
 				if (scrollPercent >= threshold && !trackedThresholds.current.has(threshold)) {
 					trackedThresholds.current.add(threshold);
 
-					// Call Encatch SDK method
 					if (window.encatch && typeof window.encatch.capturePageScrollEvent === "function") {
 						window.encatch.capturePageScrollEvent(`${threshold}%`);
-					}
-
-					// Also track as a regular event for analytics
-					if (window.encatch && typeof window.encatch.trackEvent === "function") {
-						window.encatch.trackEvent("page_scroll", {
-							scrollPercent: threshold,
-							page: window.location.pathname,
-						});
 					}
 				}
 			}

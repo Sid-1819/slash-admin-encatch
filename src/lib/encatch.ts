@@ -82,8 +82,8 @@ function createEncatchAdapter() {
 			// No-op in @encatch/web-sdk
 		},
 
-		capturePageScrollEvent(scrollPercent: string) {
-			_encatch.trackEvent(`page_scroll_${scrollPercent}`);
+		capturePageScrollEvent(_scrollPercent: string) {
+			// No-op: page scroll tracking removed
 		},
 
 		_internal: {} as EncatchGlobal["_internal"],
