@@ -48,11 +48,11 @@ export function initEncatch(): void {
 		console.warn("[Encatch] API key is not set. Encatch SDK will not be initialized.");
 		return;
 	}
-	const origin = window.location.origin;
-	const apiBaseUrl = origin;
+	const isProd = import.meta.env.PROD;
+	const encatchOrigin = isProd ? "https://app.dev.encatch.com" : window.location.origin;
 	_encatch.init(apiKey, {
-		webHost: origin,
-		apiBaseUrl,
+		webHost: encatchOrigin,
+		apiBaseUrl: encatchOrigin,
 		theme: "system",
 	});
 }
