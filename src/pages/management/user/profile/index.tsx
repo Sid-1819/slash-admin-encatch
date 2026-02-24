@@ -1,6 +1,6 @@
 import CoverImage from "@/assets/images/cover/cover_4.jpg";
 import { Icon } from "@/components/icon";
-import { ENCATCH_FEEDBACK_FORM_ID, _encatch } from "@/lib/encatch";
+import { getEncatchFeedbackFormId1, _encatch } from "@/lib/encatch";
 import { useUserInfo } from "@/store/userStore";
 import { themeVars } from "@/theme/theme.css";
 import { Button } from "@/ui/button";
@@ -81,7 +81,8 @@ function UserProfile() {
 							size="sm"
 							onClick={() => {
 								_encatch.trackEvent("feedback_button_clicked");
-								_encatch.showForm(ENCATCH_FEEDBACK_FORM_ID);
+								const formId = getEncatchFeedbackFormId1();
+								if (formId) _encatch.showForm(formId);
 							}}
 						>
 							<Icon icon="material-symbols:feedback-outline" size={18} className="mr-2" />

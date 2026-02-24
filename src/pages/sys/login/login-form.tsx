@@ -2,15 +2,16 @@ import { DB_USER } from "@/_mock/assets_backup";
 import type { SignInReq } from "@/api/services/userService";
 import { Icon } from "@/components/icon";
 import { GLOBAL_CONFIG } from "@/global-config";
-import { _encatch } from "@/lib/encatch";
+import { ENCATCH_STORAGE_KEYS, _encatch } from "@/lib/encatch";
 import { useSignIn } from "@/store/userStore";
 import { Button } from "@/ui/button";
 import { Checkbox } from "@/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/ui/form";
 import { Input } from "@/ui/input";
+import { Label } from "@/ui/label";
 import { cn } from "@/utils";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -21,6 +22,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 	const { t } = useTranslation();
 	const [loading, setLoading] = useState(false);
 	const [remember, setRemember] = useState(true);
+	const [encatchApiKey, setEncatchApiKey] = useState("");
 	const navigatge = useNavigate();
 
 	const { loginState, setLoginState } = useLoginStateContext();
@@ -29,13 +31,35 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 	const form = useForm<SignInReq>({
 		defaultValues: {
 			username: DB_USER[0].username,
-			password: "",
 		},
 	});
+
+	// Load Encatch API key from localStorage on mount
+	useEffect(() => {
+		try {
+			setEncatchApiKey(localStorage.getItem(ENCATCH_STORAGE_KEYS.API_KEY) ?? "");
+		} catch {
+			// ignore
+		}
+	}, []);
+
+	const saveEncatchConfig = () => {
+		try {
+			localStorage.setItem(ENCATCH_STORAGE_KEYS.API_KEY, encatchApiKey.trim());
+			toast.success("Encatch config saved. Reload the app to apply.");
+		} catch {
+			toast.error("Failed to save Encatch config.");
+		}
+	};
 
 	if (loginState !== LoginStateEnum.LOGIN) return null;
 
 	const handleFinish = async (values: SignInReq) => {
+		try {
+			localStorage.setItem(ENCATCH_STORAGE_KEYS.API_KEY, encatchApiKey.trim());
+		} catch {
+			// ignore
+		}
 		setLoading(true);
 		try {
 			await signIn(values);
@@ -52,7 +76,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 	const handleGuestLogin = async () => {
 		setLoading(true);
 		try {
-			await signIn({ username: "guest", password: "" });
+			await signIn({ username: "guest" });
 			navigatge(GLOBAL_CONFIG.defaultRoute, { replace: true });
 			toast.success("Sign in success!", {
 				closeButton: true,
@@ -87,31 +111,28 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 						)}
 					/>
 
-					<FormField
-						control={form.control}
-						name="password"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>{t("sys.login.password")} (Optional)</FormLabel>
-								<FormControl>
-									<Input type="password" placeholder={t("sys.login.passwordPlaceholder")} {...field} suppressHydrationWarning />
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-
-					{/* 记住我/忘记密码 */}
-					<div className="flex flex-row justify-between">
-						<div className="flex items-center space-x-2">
-							<Checkbox id="remember" checked={remember} onCheckedChange={(checked) => setRemember(checked === "indeterminate" ? false : checked)} />
-							<label htmlFor="remember" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-								{t("sys.login.rememberMe")}
-							</label>
-						</div>
-						<Button variant="link" onClick={() => setLoginState(LoginStateEnum.RESET_PASSWORD)} size="sm">
-							{t("sys.login.forgetPassword")}
+					{/* Encatch API key */}
+					<div className="space-y-2">
+						<Label htmlFor="encatch-api-key">Encatch API key</Label>
+						<Input
+							id="encatch-api-key"
+							type="text"
+							placeholder="e.g. en_dev_..."
+							value={encatchApiKey}
+							onChange={(e) => setEncatchApiKey(e.target.value)}
+							autoComplete="off"
+						/>
+						<Button type="button" variant="outline" size="sm" onClick={saveEncatchConfig}>
+							Save Encatch config
 						</Button>
+					</div>
+
+					{/* 记住我 */}
+					<div className="flex items-center space-x-2">
+						<Checkbox id="remember" checked={remember} onCheckedChange={(checked) => setRemember(checked === "indeterminate" ? false : checked)} />
+						<label htmlFor="remember" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+							{t("sys.login.rememberMe")}
+						</label>
 					</div>
 
 					{/* 登录按钮 */}

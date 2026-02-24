@@ -1,15 +1,42 @@
 /**
  * Encatch Web SDK integration for Slash Admin.
  * Uses @encatch/web-sdk directly; no adapter. Call _encatch methods after initEncatch().
+ * API key and feedback form IDs are read from localStorage (set on the login screen).
  */
 
 import { _encatch } from "@encatch/web-sdk";
 import type { UserTraits } from "@encatch/web-sdk";
 
-const API_KEY = import.meta.env.VITE_ENCATCH_SDK_API_KEY;
+/** localStorage keys for Encatch config (set on login screen). */
+export const ENCATCH_STORAGE_KEYS = {
+	API_KEY: "encatch_api_key",
+	FEEDBACK_FORM_ID_1: "encatch_feedback_form_id_1",
+	FEEDBACK_FORM_ID_2: "encatch_feedback_form_id_2",
+} as const;
 
-/** Default feedback form ID (from env or fallback). Use when opening feedback. */
-export const ENCATCH_FEEDBACK_FORM_ID = import.meta.env.VITE_ENCATCH_FEEDBACK_FORM_ID;
+function getStored(key: string): string {
+	if (typeof window === "undefined" || typeof localStorage === "undefined") return "";
+	try {
+		return localStorage.getItem(key) ?? "";
+	} catch {
+		return "";
+	}
+}
+
+/** API key from localStorage (set on login screen). */
+export function getEncatchApiKey(): string {
+	return getStored(ENCATCH_STORAGE_KEYS.API_KEY).trim();
+}
+
+/** Default feedback form ID 1 from localStorage. Use when opening feedback. */
+export function getEncatchFeedbackFormId1(): string {
+	return getStored(ENCATCH_STORAGE_KEYS.FEEDBACK_FORM_ID_1).trim();
+}
+
+/** Default feedback form ID 2 from localStorage. */
+export function getEncatchFeedbackFormId2(): string {
+	return getStored(ENCATCH_STORAGE_KEYS.FEEDBACK_FORM_ID_2).trim();
+}
 
 /** Re-export SDK for direct usage. */
 export { _encatch };
@@ -39,13 +66,14 @@ export function mapTraitsToSdk(traits: Record<string, unknown> | undefined): Use
 
 /**
  * Initialize the Encatch SDK. Call once when the app mounts (browser only).
+ * Uses API key from localStorage (set on login screen).
  */
 export function initEncatch(): void {
 	if (typeof window === "undefined") return;
 	if (_encatch._initialized) return;
-	const apiKey = API_KEY?.trim();
+	const apiKey = getEncatchApiKey();
 	if (!apiKey) {
-		console.warn("[Encatch] API key is not set. Encatch SDK will not be initialized.");
+		console.warn("[Encatch] API key is not set. Set it on the login screen to enable Encatch.");
 		return;
 	}
 	const isProd = import.meta.env.PROD;

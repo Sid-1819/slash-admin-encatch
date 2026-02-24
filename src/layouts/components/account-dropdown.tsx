@@ -19,10 +19,10 @@ export default function AccountDropdown() {
 	const { t } = useTranslation();
 	const logout = () => {
 		try {
+			_encatch.trackEvent("user_logged_out");
+			_encatch.resetUser();
 			clearUserInfoAndToken();
 			backToLogin();
-			// _refiner("resetUser");
-			_encatch.trackEvent("user_logged_out");
 		} catch (error) {
 			console.log(error);
 		} finally {

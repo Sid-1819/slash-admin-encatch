@@ -1,5 +1,5 @@
 import { Icon } from "@/components/icon";
-import { ENCATCH_FEEDBACK_FORM_ID, _encatch, mapTraitsToSdk } from "@/lib/encatch";
+import { getEncatchFeedbackFormId1, getEncatchFeedbackFormId2, _encatch, mapTraitsToSdk } from "@/lib/encatch";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card";
 import { Input } from "@/ui/input";
@@ -57,9 +57,11 @@ export default function EncatchTestPage() {
 	const [screenName, setScreenName] = useState("/dashboard/encatch-test");
 	const [trackScreenResult, setTrackScreenResult] = useState<string | null>(null);
 
-	// showForm
-	const [feedbackFormId, setFeedbackFormId] = useState(ENCATCH_FEEDBACK_FORM_ID);
-	const [resetMode, setResetMode] = useState<ResetMode>("always");
+	// showForm (default from localStorage)
+	const [feedbackFormId1, setFeedbackFormId1] = useState(() => getEncatchFeedbackFormId1());
+	const [feedbackFormId2, setFeedbackFormId2] = useState(() => getEncatchFeedbackFormId2());
+	const [resetMode1, setResetMode1] = useState<ResetMode>("always");
+	const [resetMode2, setResetMode2] = useState<ResetMode>("always");
 	const [showFormResult, setShowFormResult] = useState<string | null>(null);
 
 	// addToResponse
@@ -188,11 +190,23 @@ export default function EncatchTestPage() {
 		}
 	};
 
-	const handleOpenFeedback = () => {
+	const handleOpenForm1 = () => {
 		setShowFormResult(null);
 		try {
-			_encatch.showForm(feedbackFormId.trim() || ENCATCH_FEEDBACK_FORM_ID, { reset: resetMode });
-			setShowFormResult(`Form opened with reset=${resetMode}`);
+			const formId = feedbackFormId1.trim() || getEncatchFeedbackFormId1();
+			_encatch.showForm(formId, { reset: resetMode1 });
+			setShowFormResult(`Form 1 opened (${formId}) with reset=${resetMode1}`);
+		} catch (e) {
+			setShowFormResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+		}
+	};
+
+	const handleOpenForm2 = () => {
+		setShowFormResult(null);
+		try {
+			const formId = feedbackFormId2.trim() || getEncatchFeedbackFormId2();
+			_encatch.showForm(formId, { reset: resetMode2 });
+			setShowFormResult(`Form 2 opened (${formId}) with reset=${resetMode2}`);
 		} catch (e) {
 			setShowFormResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
 		}
@@ -257,29 +271,49 @@ export default function EncatchTestPage() {
 			</Section>
 
 			<div className="grid gap-4 md:grid-cols-2">
-				<Section title="trackEvent" description="Fire a custom event. Used for targeting and analytics. No-op in fullscreen mode.">
-					<div className="flex flex-col gap-2">
-						<Label htmlFor="track-event-name">Event name</Label>
-						<Input id="track-event-name" value={trackEventName} onChange={(e) => setTrackEventName(e.target.value)} placeholder="e.g. button_clicked" />
-						<Button onClick={handleTrackEvent}>Fire track event</Button>
-						{trackResult && (
-							<Text variant="caption" className="text-muted-foreground">
-								{trackResult}
-							</Text>
-						)}
-					</div>
-				</Section>
-
-				<Section title="trackScreen" description="Track screen/page view. Call on route change or use automatic tracking after startSession().">
-					<div className="flex flex-col gap-2">
-						<Label htmlFor="screen-name">Screen name (e.g. URL or route)</Label>
-						<Input id="screen-name" value={screenName} onChange={(e) => setScreenName(e.target.value)} placeholder="/dashboard/encatch-test" />
-						<Button onClick={handleTrackScreen}>Track screen</Button>
-						{trackScreenResult && (
-							<Text variant="caption" className="text-muted-foreground">
-								{trackScreenResult}
-							</Text>
-						)}
+				<Section
+					title="trackEvent & trackScreen"
+					description="Fire a custom event or track a screen view. Screen tracking can be automatic after startSession()."
+				>
+					<div className="flex flex-col gap-3">
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="track-event-name">Event name</Label>
+							<div className="flex gap-2">
+								<Input
+									id="track-event-name"
+									value={trackEventName}
+									onChange={(e) => setTrackEventName(e.target.value)}
+									placeholder="e.g. button_clicked"
+									className="flex-1"
+								/>
+								<Button onClick={handleTrackEvent}>Fire event</Button>
+							</div>
+							{trackResult && (
+								<Text variant="caption" className="text-muted-foreground">
+									{trackResult}
+								</Text>
+							)}
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="screen-name">Screen name</Label>
+							<div className="flex gap-2">
+								<Input
+									id="screen-name"
+									value={screenName}
+									onChange={(e) => setScreenName(e.target.value)}
+									placeholder="/dashboard/encatch-test"
+									className="flex-1"
+								/>
+								<Button variant="outline" onClick={handleTrackScreen}>
+									Track screen
+								</Button>
+							</div>
+							{trackScreenResult && (
+								<Text variant="caption" className="text-muted-foreground">
+									{trackScreenResult}
+								</Text>
+							)}
+						</div>
 					</div>
 				</Section>
 
@@ -307,88 +341,125 @@ export default function EncatchTestPage() {
 					</div>
 				</Section>
 
-				<Section title="setTheme" description="Set Encatch UI theme (light, dark, or system).">
-					<div className="flex flex-wrap gap-2">
-						<Button variant="outline" onClick={() => handleSetTheme("light")}>
-							Light
-						</Button>
-						<Button variant="outline" onClick={() => handleSetTheme("dark")}>
-							Dark
-						</Button>
-						<Button variant="outline" onClick={() => handleSetTheme("system")}>
-							System
-						</Button>
+				<Section title="setTheme, setLocale, setCountry" description="Theme for Encatch UI; locale and country for form content and localization.">
+					<div className="flex flex-col gap-3">
+						<div className="flex flex-wrap items-center gap-2">
+							<Label className="text-muted-foreground text-xs shrink-0">Theme</Label>
+							<Button variant="outline" size="sm" onClick={() => handleSetTheme("light")}>
+								Light
+							</Button>
+							<Button variant="outline" size="sm" onClick={() => handleSetTheme("dark")}>
+								Dark
+							</Button>
+							<Button variant="outline" size="sm" onClick={() => handleSetTheme("system")}>
+								System
+							</Button>
+						</div>
+						<div className="flex flex-wrap items-center gap-2">
+							<Label htmlFor="language" className="text-muted-foreground text-xs shrink-0">
+								Locale
+							</Label>
+							<Input id="language" value={language} onChange={(e) => setLanguage(e.target.value)} placeholder="en" className="w-20" />
+							<Button size="sm" onClick={handleSetLocale}>
+								Set
+							</Button>
+							{languageResult && (
+								<Text variant="caption" className="text-muted-foreground">
+									{languageResult}
+								</Text>
+							)}
+						</div>
+						<div className="flex flex-wrap items-center gap-2">
+							<Label htmlFor="country" className="text-muted-foreground text-xs shrink-0">
+								Country
+							</Label>
+							<Input id="country" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="US" className="w-20" />
+							<Button size="sm" onClick={handleSetCountry}>
+								Set
+							</Button>
+							{countryResult && (
+								<Text variant="caption" className="text-muted-foreground">
+									{countryResult}
+								</Text>
+							)}
+						</div>
 					</div>
 				</Section>
 
-				<Section title="setLocale" description="Set Encatch locale/language for form content.">
+				<Section title="startSession & resetUser" description="Start session (ping + URL tracking) or clear user/session (e.g. on logout).">
 					<div className="flex flex-col gap-2">
-						<Label htmlFor="language">Language code</Label>
-						<Input id="language" value={language} onChange={(e) => setLanguage(e.target.value)} placeholder="en" />
-						<Button onClick={handleSetLocale}>Set locale</Button>
-						{languageResult && (
+						<div className="flex flex-wrap items-center gap-2">
+							<Button onClick={handleStartSession}>Start session</Button>
+							<Button variant="outline" onClick={handleResetUser}>
+								Reset user
+							</Button>
+						</div>
+						{(sessionResult || resetUserResult) && (
 							<Text variant="caption" className="text-muted-foreground">
-								{languageResult}
-							</Text>
-						)}
-					</div>
-				</Section>
-
-				<Section title="setCountry" description="Set country for form/localization. Broadcast to form iframes.">
-					<div className="flex flex-col gap-2">
-						<Label htmlFor="country">Country code</Label>
-						<Input id="country" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="US" />
-						<Button onClick={handleSetCountry}>Set country</Button>
-						{countryResult && (
-							<Text variant="caption" className="text-muted-foreground">
-								{countryResult}
-							</Text>
-						)}
-					</div>
-				</Section>
-
-				<Section
-					title="startSession"
-					description="Start session tracking: ping interval, URL change detection for automatic trackScreen. Call after user is 'in session'."
-				>
-					<div className="flex flex-col gap-2">
-						<Button onClick={handleStartSession}>Start session</Button>
-						{sessionResult && (
-							<Text variant="caption" className="text-muted-foreground">
-								{sessionResult}
-							</Text>
-						)}
-					</div>
-				</Section>
-
-				<Section title="resetUser" description="Clear user and session: anonymous again, new session ID, stop ping, clear URL listeners. Call on logout.">
-					<div className="flex flex-col gap-2">
-						<Button variant="outline" onClick={handleResetUser}>
-							Reset user
-						</Button>
-						{resetUserResult && (
-							<Text variant="caption" className="text-muted-foreground">
-								{resetUserResult}
+								{sessionResult ?? resetUserResult}
 							</Text>
 						)}
 					</div>
 				</Section>
 
 				<Section title="showForm" description="Open a form by configuration ID. Reset mode: always (default), on-complete, or never.">
-					<div className="flex flex-col gap-2">
-						<Label htmlFor="feedback-id">Form configuration ID</Label>
-						<Input id="feedback-id" value={feedbackFormId} onChange={(e) => setFeedbackFormId(e.target.value)} placeholder={ENCATCH_FEEDBACK_FORM_ID} />
-						<Label>Reset mode</Label>
-						<select
-							className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-							value={resetMode}
-							onChange={(e) => setResetMode(e.target.value as ResetMode)}
-						>
-							<option value="always">always</option>
-							<option value="on-complete">on-complete</option>
-							<option value="never">never</option>
-						</select>
-						<Button onClick={handleOpenFeedback}>Open form</Button>
+					<div className="flex flex-col gap-4">
+						<div className="flex flex-col gap-2">
+							<Label htmlFor="feedback-id-1">Form ID 1</Label>
+							<div className="flex flex-wrap items-end gap-2">
+								<Input
+									id="feedback-id-1"
+									value={feedbackFormId1}
+									onChange={(e) => setFeedbackFormId1(e.target.value)}
+									placeholder={getEncatchFeedbackFormId1() || "Set on login screen"}
+									className="flex-1 min-w-[120px]"
+								/>
+								<div className="flex items-center gap-2 shrink-0">
+									<Label htmlFor="reset-mode-1" className="text-muted-foreground text-xs whitespace-nowrap">
+										Reset
+									</Label>
+									<select
+										id="reset-mode-1"
+										className="rounded-md border border-input bg-background px-3 py-2 text-sm w-[130px]"
+										value={resetMode1}
+										onChange={(e) => setResetMode1(e.target.value as ResetMode)}
+									>
+										<option value="always">always</option>
+										<option value="on-complete">on-complete</option>
+										<option value="never">never</option>
+									</select>
+								</div>
+								<Button onClick={handleOpenForm1}>Open form 1</Button>
+							</div>
+						</div>
+						<div className="flex flex-col gap-2">
+							<Label htmlFor="feedback-id-2">Form ID 2</Label>
+							<div className="flex flex-wrap items-end gap-2">
+								<Input
+									id="feedback-id-2"
+									value={feedbackFormId2}
+									onChange={(e) => setFeedbackFormId2(e.target.value)}
+									placeholder={getEncatchFeedbackFormId2() || "Set on login screen"}
+									className="flex-1 min-w-[120px]"
+								/>
+								<div className="flex items-center gap-2 shrink-0">
+									<Label htmlFor="reset-mode-2" className="text-muted-foreground text-xs whitespace-nowrap">
+										Reset
+									</Label>
+									<select
+										id="reset-mode-2"
+										className="rounded-md border border-input bg-background px-3 py-2 text-sm w-[130px]"
+										value={resetMode2}
+										onChange={(e) => setResetMode2(e.target.value as ResetMode)}
+									>
+										<option value="always">always</option>
+										<option value="on-complete">on-complete</option>
+										<option value="never">never</option>
+									</select>
+								</div>
+								<Button onClick={handleOpenForm2}>Open form 2</Button>
+							</div>
+						</div>
 						{showFormResult && (
 							<Text variant="caption" className="text-muted-foreground">
 								{showFormResult}
@@ -418,9 +489,12 @@ export default function EncatchTestPage() {
 				</Section>
 			</div>
 
-			<Section title="init" description="init(apiKey, config) is called once by EncatchProvider on app load. Config: webHost, apiBaseUrl, theme, isFullScreen.">
+			<Section
+				title="init"
+				description="init(apiKey, config) is called once by EncatchProvider on app load. API key and feedback form ID are set on the login screen (Encatch section)."
+			>
 				<Text variant="caption" className="text-muted-foreground">
-					No action needed on this page. Encatch is initialized in EncatchProvider using VITE_ENCATCH_SDK_API_KEY.
+					Set the Encatch API key and feedback form ID on the login screen, then reload. EncatchProvider initializes the SDK from localStorage.
 				</Text>
 			</Section>
 		</div>
