@@ -9,6 +9,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type ResetMode = "always" | "on-complete" | "never";
 
+type KeyValue = { key: string; value: string };
+type KeyValueRow = KeyValue & { id: string };
+
 function Section({
 	title,
 	description,
@@ -42,7 +45,21 @@ export default function EncatchTestPage() {
 
 	// identifyUser
 	const [identifyUserId, setIdentifyUserId] = useState("user_123");
-	const [identifyTraits, setIdentifyTraits] = useState('{"$set":{"email":"user_123@example.com","name":"Test User"}}');
+	// Simple trait fields (no JSON)
+	const [identifySetEmail, setIdentifySetEmail] = useState("user_123@example.com");
+	const [identifySetDisplayName, setIdentifySetDisplayName] = useState("Test User");
+	const [identifySetUserName, setIdentifySetUserName] = useState("user_123");
+	const [identifySetExtra, setIdentifySetExtra] = useState<KeyValueRow[]>([]);
+	const [identifySetOncePairs, setIdentifySetOncePairs] = useState<KeyValueRow[]>([]);
+	const [identifyIncrementPairs, setIdentifyIncrementPairs] = useState<KeyValueRow[]>([]);
+	const [identifyDecrementPairs, setIdentifyDecrementPairs] = useState<KeyValueRow[]>([]);
+	const [identifyUnsetKeys, setIdentifyUnsetKeys] = useState("");
+	// Options (collapsible)
+	const [showIdentifyOptions, setShowIdentifyOptions] = useState(false);
+	const [identifyLocale, setIdentifyLocale] = useState("");
+	const [identifyCountry, setIdentifyCountry] = useState("");
+	const [identifySecureSignature, setIdentifySecureSignature] = useState("");
+	const [identifySecureTime, setIdentifySecureTime] = useState("");
 	const [identifyResult, setIdentifyResult] = useState<string | null>(null);
 
 	// setLocale
@@ -95,20 +112,58 @@ export default function EncatchTestPage() {
 		return () => unsubscribe();
 	}, [appendEvent]);
 
-	// Keep traits email in sync with user ID
-	useEffect(() => {
-		const email = `${(identifyUserId.trim() || "anonymous").replace(/\s+/g, "_")}@example.com`;
-		setIdentifyTraits((prev) => {
-			try {
-				const parsed = JSON.parse(prev) as Record<string, unknown>;
-				const set = (parsed.$set as Record<string, unknown>) ?? {};
-				parsed.$set = { ...set, email };
-				return JSON.stringify(parsed, null, 2);
-			} catch {
-				return JSON.stringify({ $set: { email } }, null, 2);
+	// Build traits object from simple fields (for preview and submit)
+	const identifyTraitsFromFields = useCallback((): Record<string, unknown> => {
+		const traits: Record<string, unknown> = {};
+		const setObj: Record<string, unknown> = {};
+		if (identifySetEmail.trim()) setObj.email = identifySetEmail.trim();
+		if (identifySetDisplayName.trim()) setObj.display_name = identifySetDisplayName.trim();
+		if (identifySetUserName.trim()) setObj.user_name = identifySetUserName.trim();
+		for (const { key, value } of identifySetExtra) {
+			if (key.trim()) setObj[key.trim()] = value.trim();
+		}
+		if (Object.keys(setObj).length > 0) traits.$set = setObj;
+
+		const setOnceObj: Record<string, unknown> = {};
+		for (const { key, value } of identifySetOncePairs) {
+			if (key.trim()) setOnceObj[key.trim()] = value.trim();
+		}
+		if (Object.keys(setOnceObj).length > 0) traits.$setOnce = setOnceObj;
+
+		const incObj: Record<string, number> = {};
+		for (const { key, value } of identifyIncrementPairs) {
+			if (key.trim()) {
+				const n = Number(value.trim());
+				if (!Number.isNaN(n)) incObj[key.trim()] = n;
 			}
-		});
-	}, [identifyUserId]);
+		}
+		if (Object.keys(incObj).length > 0) traits.$increment = incObj;
+
+		const decObj: Record<string, number> = {};
+		for (const { key, value } of identifyDecrementPairs) {
+			if (key.trim()) {
+				const n = Number(value.trim());
+				if (!Number.isNaN(n)) decObj[key.trim()] = n;
+			}
+		}
+		if (Object.keys(decObj).length > 0) traits.$decrement = decObj;
+
+		const unsetArr = identifyUnsetKeys
+			.split(",")
+			.map((s) => s.trim())
+			.filter(Boolean);
+		if (unsetArr.length > 0) traits.$unset = unsetArr;
+		return traits;
+	}, [
+		identifySetEmail,
+		identifySetDisplayName,
+		identifySetUserName,
+		identifySetExtra,
+		identifySetOncePairs,
+		identifyIncrementPairs,
+		identifyDecrementPairs,
+		identifyUnsetKeys,
+	]);
 
 	const handleTrackEvent = () => {
 		setTrackResult(null);
@@ -123,16 +178,60 @@ export default function EncatchTestPage() {
 	const handleIdentify = () => {
 		setIdentifyResult(null);
 		try {
-			let traits: Record<string, unknown> | undefined;
-			if (identifyTraits.trim()) {
-				traits = JSON.parse(identifyTraits) as Record<string, unknown>;
+			const traits = identifyTraitsFromFields();
+			const options: { locale?: string; country?: string; secure?: { signature: string; generatedDateTimeinUTC?: string } } = {};
+			if (identifyLocale.trim()) options.locale = identifyLocale.trim();
+			if (identifyCountry.trim()) options.country = identifyCountry.trim();
+			if (identifySecureSignature.trim()) {
+				options.secure = {
+					signature: identifySecureSignature.trim(),
+					...(identifySecureTime.trim() && { generatedDateTimeinUTC: identifySecureTime.trim() }),
+				};
 			}
-			_encatch.identifyUser(identifyUserId.trim() || "anonymous", mapTraitsToSdk(traits));
-			setIdentifyResult(`Identify called for: ${identifyUserId.trim() || "anonymous"}`);
+			const userId = identifyUserId.trim() || "anonymous";
+			_encatch.identifyUser(userId, mapTraitsToSdk(Object.keys(traits).length ? traits : undefined), Object.keys(options).length > 0 ? options : undefined);
+			setIdentifyResult(`Identify called for: ${userId}`);
 		} catch (e) {
 			setIdentifyResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
 		}
 	};
+
+	function addSetExtra() {
+		setIdentifySetExtra((prev) => [...prev, { key: "", value: "", id: crypto.randomUUID() }]);
+	}
+	function addSetOnce() {
+		setIdentifySetOncePairs((prev) => [...prev, { key: "", value: "", id: crypto.randomUUID() }]);
+	}
+	function addIncrement() {
+		setIdentifyIncrementPairs((prev) => [...prev, { key: "", value: "", id: crypto.randomUUID() }]);
+	}
+	function addDecrement() {
+		setIdentifyDecrementPairs((prev) => [...prev, { key: "", value: "", id: crypto.randomUUID() }]);
+	}
+	function updateSetExtra(index: number, field: "key" | "value", val: string) {
+		setIdentifySetExtra((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: val } : p)));
+	}
+	function removeSetExtra(index: number) {
+		setIdentifySetExtra((prev) => prev.filter((_, i) => i !== index));
+	}
+	function updateSetOnce(index: number, field: "key" | "value", val: string) {
+		setIdentifySetOncePairs((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: val } : p)));
+	}
+	function removeSetOnce(index: number) {
+		setIdentifySetOncePairs((prev) => prev.filter((_, i) => i !== index));
+	}
+	function updateIncrement(index: number, field: "key" | "value", val: string) {
+		setIdentifyIncrementPairs((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: val } : p)));
+	}
+	function removeIncrement(index: number) {
+		setIdentifyIncrementPairs((prev) => prev.filter((_, i) => i !== index));
+	}
+	function updateDecrement(index: number, field: "key" | "value", val: string) {
+		setIdentifyDecrementPairs((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: val } : p)));
+	}
+	function removeDecrement(index: number) {
+		setIdentifyDecrementPairs((prev) => prev.filter((_, i) => i !== index));
+	}
 
 	const handleSetTheme = (theme: "light" | "dark" | "system") => {
 		try {
@@ -317,21 +416,199 @@ export default function EncatchTestPage() {
 					</div>
 				</Section>
 
-				<Section
-					title="identifyUser"
-					description="Identify the current user. Traits support $set, $setOnce, $increment, $decrement, $unset (via mapTraitsToSdk)."
-				>
-					<div className="flex flex-col gap-2">
-						<Label htmlFor="identify-user-id">User ID</Label>
-						<Input id="identify-user-id" value={identifyUserId} onChange={(e) => setIdentifyUserId(e.target.value)} placeholder="user_123" />
-						<Label htmlFor="identify-traits">Traits (JSON, optional)</Label>
-						<textarea
-							id="identify-traits"
-							className="min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
-							value={identifyTraits}
-							onChange={(e) => setIdentifyTraits(e.target.value)}
-							placeholder='{"$set":{"email":"..."}}'
-						/>
+				<Section title="identifyUser" description="Identify the current user. Fill simple fields; generated traits JSON is shown below.">
+					<div className="flex flex-col gap-4">
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="identify-user-id">User ID</Label>
+							<Input id="identify-user-id" value={identifyUserId} onChange={(e) => setIdentifyUserId(e.target.value)} placeholder="user_123" />
+						</div>
+
+						{/* Traits: simple fields */}
+						<div className="flex flex-col gap-3 rounded-lg border border-border/50 bg-muted/20 p-3">
+							<Text variant="caption" className="font-medium text-foreground">
+								Traits
+							</Text>
+							<div className="grid gap-2 sm:grid-cols-3">
+								<div className="flex flex-col gap-1">
+									<Label htmlFor="identify-set-email" className="text-xs">
+										$set — email
+									</Label>
+									<Input id="identify-set-email" value={identifySetEmail} onChange={(e) => setIdentifySetEmail(e.target.value)} placeholder="a@b.com" />
+								</div>
+								<div className="flex flex-col gap-1">
+									<Label htmlFor="identify-set-display-name" className="text-xs">
+										$set — display_name
+									</Label>
+									<Input
+										id="identify-set-display-name"
+										value={identifySetDisplayName}
+										onChange={(e) => setIdentifySetDisplayName(e.target.value)}
+										placeholder="Test User"
+									/>
+								</div>
+								<div className="flex flex-col gap-1">
+									<Label htmlFor="identify-set-user-name" className="text-xs">
+										$set — user_name
+									</Label>
+									<Input
+										id="identify-set-user-name"
+										value={identifySetUserName}
+										onChange={(e) => setIdentifySetUserName(e.target.value)}
+										placeholder="user_123"
+									/>
+								</div>
+							</div>
+							<div className="flex flex-col gap-1.5">
+								<div className="flex items-center justify-between">
+									<Label className="text-xs">$set — extra (key / value)</Label>
+									<Button type="button" variant="outline" size="sm" onClick={addSetExtra}>
+										Add row
+									</Button>
+								</div>
+								{identifySetExtra.map((row, i) => (
+									<div key={row.id} className="flex gap-2">
+										<Input placeholder="key" value={row.key} onChange={(e) => updateSetExtra(i, "key", e.target.value)} className="font-mono text-sm" />
+										<Input placeholder="value" value={row.value} onChange={(e) => updateSetExtra(i, "value", e.target.value)} className="font-mono text-sm" />
+										<Button type="button" variant="ghost" size="sm" onClick={() => removeSetExtra(i)}>
+											Remove
+										</Button>
+									</div>
+								))}
+							</div>
+							<div className="flex flex-col gap-1.5">
+								<div className="flex items-center justify-between">
+									<Label className="text-xs">$setOnce (key / value)</Label>
+									<Button type="button" variant="outline" size="sm" onClick={addSetOnce}>
+										Add row
+									</Button>
+								</div>
+								{identifySetOncePairs.map((row, i) => (
+									<div key={row.id} className="flex gap-2">
+										<Input placeholder="key" value={row.key} onChange={(e) => updateSetOnce(i, "key", e.target.value)} className="font-mono text-sm" />
+										<Input placeholder="value" value={row.value} onChange={(e) => updateSetOnce(i, "value", e.target.value)} className="font-mono text-sm" />
+										<Button type="button" variant="ghost" size="sm" onClick={() => removeSetOnce(i)}>
+											Remove
+										</Button>
+									</div>
+								))}
+							</div>
+							<div className="flex flex-col gap-1.5">
+								<div className="flex items-center justify-between">
+									<Label className="text-xs">$increment (key / number)</Label>
+									<Button type="button" variant="outline" size="sm" onClick={addIncrement}>
+										Add row
+									</Button>
+								</div>
+								{identifyIncrementPairs.map((row, i) => (
+									<div key={row.id} className="flex gap-2">
+										<Input placeholder="key" value={row.key} onChange={(e) => updateIncrement(i, "key", e.target.value)} className="font-mono text-sm" />
+										<Input
+											type="number"
+											placeholder="value"
+											value={row.value}
+											onChange={(e) => updateIncrement(i, "value", e.target.value)}
+											className="font-mono text-sm"
+										/>
+										<Button type="button" variant="ghost" size="sm" onClick={() => removeIncrement(i)}>
+											Remove
+										</Button>
+									</div>
+								))}
+							</div>
+							<div className="flex flex-col gap-1.5">
+								<div className="flex items-center justify-between">
+									<Label className="text-xs">$decrement (key / number)</Label>
+									<Button type="button" variant="outline" size="sm" onClick={addDecrement}>
+										Add row
+									</Button>
+								</div>
+								{identifyDecrementPairs.map((row, i) => (
+									<div key={row.id} className="flex gap-2">
+										<Input placeholder="key" value={row.key} onChange={(e) => updateDecrement(i, "key", e.target.value)} className="font-mono text-sm" />
+										<Input
+											type="number"
+											placeholder="value"
+											value={row.value}
+											onChange={(e) => updateDecrement(i, "value", e.target.value)}
+											className="font-mono text-sm"
+										/>
+										<Button type="button" variant="ghost" size="sm" onClick={() => removeDecrement(i)}>
+											Remove
+										</Button>
+									</div>
+								))}
+							</div>
+							<div className="flex flex-col gap-1">
+								<Label htmlFor="identify-unset-keys" className="text-xs">
+									$unset — keys to remove (comma-separated)
+								</Label>
+								<Input
+									id="identify-unset-keys"
+									value={identifyUnsetKeys}
+									onChange={(e) => setIdentifyUnsetKeys(e.target.value)}
+									placeholder="oldField, otherField"
+								/>
+							</div>
+						</div>
+
+						{/* Generated traits JSON (read-only) */}
+						<div className="flex flex-col gap-1.5">
+							<Label className="text-muted-foreground text-xs">Generated traits JSON</Label>
+							<pre className="min-h-[80px] w-full overflow-auto rounded-md border border-input bg-muted/30 p-3 text-xs font-mono text-muted-foreground">
+								{JSON.stringify(identifyTraitsFromFields(), null, 2)}
+							</pre>
+						</div>
+
+						{/* Options: show/hide */}
+						<div className="flex flex-col gap-2">
+							<Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => setShowIdentifyOptions((v) => !v)}>
+								{showIdentifyOptions ? "Hide options" : "Show options"}
+							</Button>
+							{showIdentifyOptions && (
+								<div className="flex flex-col gap-3 rounded-lg border border-border/50 bg-muted/20 p-3">
+									<Text variant="caption" className="font-medium text-foreground">
+										Options (locale, country, secure)
+									</Text>
+									<div className="grid gap-2 sm:grid-cols-2">
+										<div className="flex flex-col gap-1">
+											<Label htmlFor="identify-locale" className="text-xs">
+												locale
+											</Label>
+											<Input id="identify-locale" value={identifyLocale} onChange={(e) => setIdentifyLocale(e.target.value)} placeholder="en" />
+										</div>
+										<div className="flex flex-col gap-1">
+											<Label htmlFor="identify-country" className="text-xs">
+												country
+											</Label>
+											<Input id="identify-country" value={identifyCountry} onChange={(e) => setIdentifyCountry(e.target.value)} placeholder="US" />
+										</div>
+									</div>
+									<div className="flex flex-col gap-1">
+										<Label htmlFor="identify-secure-sig" className="text-xs">
+											secure.signature
+										</Label>
+										<Input
+											id="identify-secure-sig"
+											value={identifySecureSignature}
+											onChange={(e) => setIdentifySecureSignature(e.target.value)}
+											placeholder="Optional signature"
+										/>
+									</div>
+									<div className="flex flex-col gap-1">
+										<Label htmlFor="identify-secure-time" className="text-xs">
+											secure.generatedDateTimeinUTC
+										</Label>
+										<Input
+											id="identify-secure-time"
+											value={identifySecureTime}
+											onChange={(e) => setIdentifySecureTime(e.target.value)}
+											placeholder="Optional ISO datetime UTC"
+										/>
+									</div>
+								</div>
+							)}
+						</div>
+
 						<Button onClick={handleIdentify}>Identify user</Button>
 						{identifyResult && (
 							<Text variant="caption" className="text-muted-foreground">

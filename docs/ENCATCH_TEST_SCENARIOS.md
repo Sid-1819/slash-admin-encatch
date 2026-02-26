@@ -161,7 +161,7 @@ Manual, user-perspective test scenarios for the Encatch test page (`/dashboard/e
 | ---- | ----------------------------------------------------------------------- | --------------------------------------------------------- |
 | 1    | Ensure **on (event subscription)** event log is visible at top of page. | Log visible (empty or with prior events).                 |
 | 2    | Click **Open form**.                                                    | `form:show` (and typically `form:started`) in log.        |
-| 3    | Answer a question or change section.                                    | `form:question:answered` or `form:section:change` in log. |
+| 3    | Answer a question or change section.                                    | `form:answered` or `form:section:change` in log. |
 | 4    | Submit form.                                                            | `form:submit`, `form:complete` in log.                    |
 | 5    | Or close without submitting.                                            | `form:close` or `form:dismissed` in log.                  |
 
