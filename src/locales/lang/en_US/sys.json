@@ -137,7 +137,8 @@
 				"profile": "Profile"
 			},
 			"workbench": "Workbench",
-			"encatch_test": "Encatch Test"
+			"encatch_test": "Encatch Test",
+			"refiner_test": "Refiner Test"
 		},
 		"settings": {
 			"accordion": "Accordion Menu",

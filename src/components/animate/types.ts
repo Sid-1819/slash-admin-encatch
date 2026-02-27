@@ -1,26 +1,28 @@
+export type EasingTuple = [number, number, number, number];
+
 export type VariantsType = {
 	durationIn?: number;
 	durationOut?: number;
-	easeIn?: [];
-	easeOut?: [];
+	easeIn?: EasingTuple;
+	easeOut?: EasingTuple;
 	distance?: number;
 };
 
 export type TranHoverType = {
 	duration?: number;
-	ease?: [];
+	ease?: EasingTuple;
 };
 export type TranEnterType = {
 	durationIn?: number;
-	easeIn?: [];
+	easeIn?: EasingTuple;
 };
 export type TranExitType = {
 	durationOut?: number;
-	easeOut?: [];
+	easeOut?: EasingTuple;
 };
 
 export type BackgroundType = {
 	duration?: number;
-	ease?: [];
+	ease?: "linear" | "easeIn" | "easeOut" | "easeInOut";
 	colors?: string[];
 };

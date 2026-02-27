@@ -44,11 +44,10 @@ export default function EncatchTestPage() {
 	const [trackResult, setTrackResult] = useState<string | null>(null);
 
 	// identifyUser
-	const [identifyUserId, setIdentifyUserId] = useState("user_123");
+	const [identifyUserName, setIdentifyUserName] = useState("user_123");
 	// Simple trait fields (no JSON)
 	const [identifySetEmail, setIdentifySetEmail] = useState("user_123@example.com");
 	const [identifySetDisplayName, setIdentifySetDisplayName] = useState("Test User");
-	const [identifySetUserName, setIdentifySetUserName] = useState("user_123");
 	const [identifySetExtra, setIdentifySetExtra] = useState<KeyValueRow[]>([]);
 	const [identifySetOncePairs, setIdentifySetOncePairs] = useState<KeyValueRow[]>([]);
 	const [identifyIncrementPairs, setIdentifyIncrementPairs] = useState<KeyValueRow[]>([]);
@@ -118,7 +117,6 @@ export default function EncatchTestPage() {
 		const setObj: Record<string, unknown> = {};
 		if (identifySetEmail.trim()) setObj.email = identifySetEmail.trim();
 		if (identifySetDisplayName.trim()) setObj.display_name = identifySetDisplayName.trim();
-		if (identifySetUserName.trim()) setObj.user_name = identifySetUserName.trim();
 		for (const { key, value } of identifySetExtra) {
 			if (key.trim()) setObj[key.trim()] = value.trim();
 		}
@@ -154,16 +152,7 @@ export default function EncatchTestPage() {
 			.filter(Boolean);
 		if (unsetArr.length > 0) traits.$unset = unsetArr;
 		return traits;
-	}, [
-		identifySetEmail,
-		identifySetDisplayName,
-		identifySetUserName,
-		identifySetExtra,
-		identifySetOncePairs,
-		identifyIncrementPairs,
-		identifyDecrementPairs,
-		identifyUnsetKeys,
-	]);
+	}, [identifySetEmail, identifySetDisplayName, identifySetExtra, identifySetOncePairs, identifyIncrementPairs, identifyDecrementPairs, identifyUnsetKeys]);
 
 	const handleTrackEvent = () => {
 		setTrackResult(null);
@@ -188,9 +177,9 @@ export default function EncatchTestPage() {
 					...(identifySecureTime.trim() && { generatedDateTimeinUTC: identifySecureTime.trim() }),
 				};
 			}
-			const userId = identifyUserId.trim() || "anonymous";
-			_encatch.identifyUser(userId, mapTraitsToSdk(Object.keys(traits).length ? traits : undefined), Object.keys(options).length > 0 ? options : undefined);
-			setIdentifyResult(`Identify called for: ${userId}`);
+			const userName = identifyUserName.trim() || "anonymous";
+			_encatch.identifyUser(userName, mapTraitsToSdk(Object.keys(traits).length ? traits : undefined), Object.keys(options).length > 0 ? options : undefined);
+			setIdentifyResult(`Identify called for: ${userName}`);
 		} catch (e) {
 			setIdentifyResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
 		}
@@ -419,8 +408,8 @@ export default function EncatchTestPage() {
 				<Section title="identifyUser" description="Identify the current user. Fill simple fields; generated traits JSON is shown below.">
 					<div className="flex flex-col gap-4">
 						<div className="flex flex-col gap-1.5">
-							<Label htmlFor="identify-user-id">User ID</Label>
-							<Input id="identify-user-id" value={identifyUserId} onChange={(e) => setIdentifyUserId(e.target.value)} placeholder="user_123" />
+							<Label htmlFor="identify-user-name">User name</Label>
+							<Input id="identify-user-name" value={identifyUserName} onChange={(e) => setIdentifyUserName(e.target.value)} placeholder="user_123" />
 						</div>
 
 						{/* Traits: simple fields */}
@@ -428,7 +417,7 @@ export default function EncatchTestPage() {
 							<Text variant="caption" className="font-medium text-foreground">
 								Traits
 							</Text>
-							<div className="grid gap-2 sm:grid-cols-3">
+							<div className="grid gap-2 sm:grid-cols-2">
 								<div className="flex flex-col gap-1">
 									<Label htmlFor="identify-set-email" className="text-xs">
 										$set — email
@@ -444,17 +433,6 @@ export default function EncatchTestPage() {
 										value={identifySetDisplayName}
 										onChange={(e) => setIdentifySetDisplayName(e.target.value)}
 										placeholder="Test User"
-									/>
-								</div>
-								<div className="flex flex-col gap-1">
-									<Label htmlFor="identify-set-user-name" className="text-xs">
-										$set — user_name
-									</Label>
-									<Input
-										id="identify-set-user-name"
-										value={identifySetUserName}
-										onChange={(e) => setIdentifySetUserName(e.target.value)}
-										placeholder="user_123"
 									/>
 								</div>
 							</div>

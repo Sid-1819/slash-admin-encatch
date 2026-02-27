@@ -95,6 +95,7 @@
 			"workbench": "工作台",
 			"analysis": "分析",
 			"encatch_test": "Encatch 测试",
+			"refiner_test": "Refiner 测试",
 			"management": "管理",
 			"user": {
 				"index": "用户",
