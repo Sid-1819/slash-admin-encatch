@@ -5,10 +5,14 @@ import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig, loadEnv } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
+const ENCATCH_PROXY_DEFAULT = "https://app.uat.encatch.com";
+
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), "");
 	const base = env.VITE_APP_PUBLIC_PATH || "/";
 	const isProduction = mode === "production";
+	/** Encatch proxy target. Set ENCATCH_PROXY_TARGET in .env to match the host configured on the login panel. */
+	const encatchTarget = env.ENCATCH_PROXY_TARGET || ENCATCH_PROXY_DEFAULT;
 
 	return {
 		base,
@@ -40,33 +44,24 @@ export default defineConfig(({ mode }) => {
 					rewrite: (path) => path.replace(/^\/api/, ""),
 					secure: false,
 				},
-				// Encatch – same pattern as web-sdk-tester next.config.ts (rewrites to app.dev.encatch.com)
+				// Encatch – proxy target from ENCATCH_PROXY_TARGET (.env), default app.dev.encatch.com. Match the host set on the login panel.
 				// 1) API: so track-event etc. go through proxy (avoids CORS on x-device-id)
 				"/engage-product/encatch/api": {
-					target: "https://app.dev.encatch.com",
+					target: encatchTarget,
 					changeOrigin: true,
 					secure: true,
 				},
 				// 2) Form/iframe: so iframe URL stays on origin and gets proxied (avoids 404)
 				"/engage-product/encatch": {
-					target: "https://app.dev.encatch.com",
+					target: encatchTarget,
 					changeOrigin: true,
 					secure: true,
 				},
 				// 3) SDK script: so script loads from origin (avoids CORS on encatch.js) – must be before /s
-				// "/s/sdk/v1": {
-				// 	target: "https://app.dev.encatch.com",
-				// 	changeOrigin: true,
-				// 	secure: true,
-				// },
-				// // 4) Form iframe: SDK loads form at /s/web-sdk-form?formId=... – proxy so iframe shows form, not 404
-				// "/s/web-sdk-form": {
-				// 	target: "https://app.dev.encatch.com",
-				// 	changeOrigin: true,
-				// 	secure: true,
-				// },
+				// "/s/sdk/v1": { target: encatchTarget, changeOrigin: true, secure: true },
+				// 4) Form iframe: SDK loads form at /s/web-sdk-form?formId=...
 				"/s/": {
-					target: "https://app.dev.encatch.com",
+					target: encatchTarget,
 					changeOrigin: true,
 					secure: true,
 				},

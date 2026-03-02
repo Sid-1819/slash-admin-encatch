@@ -6,6 +6,7 @@ export const frontendDashboardRoutes: RouteObject[] = [
 	{ path: "workbench", element: Component("/pages/dashboard/workbench") },
 	{ path: "analysis", element: Component("/pages/dashboard/analysis") },
 	{ path: "encatch-test", element: Component("/pages/dashboard/encatch-test") },
+	{ path: "encatch-instructions", element: Component("/pages/dashboard/encatch-instructions") },
 	{ path: "refiner-test", element: Component("/pages/dashboard/refiner-test") },
 	{
 		path: "components",

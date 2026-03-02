@@ -10,9 +10,20 @@ import type { UserTraits } from "@encatch/web-sdk";
 /** localStorage keys for Encatch config (set on login screen). */
 export const ENCATCH_STORAGE_KEYS = {
 	API_KEY: "encatch_api_key",
+	HOST: "encatch_host",
 	FEEDBACK_FORM_ID_1: "encatch_feedback_form_id_1",
 	FEEDBACK_FORM_ID_2: "encatch_feedback_form_id_2",
 } as const;
+
+/** Default Encatch host when none is configured (UAT). */
+export const ENCATCH_DEFAULT_HOST = "https://app.uat.encatch.com";
+
+/** Dropdown options for Encatch host on the login panel. */
+export const ENCATCH_HOST_OPTIONS = [
+	{ value: "https://app.dev.encatch.com", label: "app.dev.encatch.com" },
+	{ value: "https://app.uat.encatch.com", label: "app.uat.encatch.com" },
+	{ value: "https://app.encatch.com", label: "app.encatch.com" },
+] as const;
 
 function getStored(key: string): string {
 	if (typeof window === "undefined" || typeof localStorage === "undefined") return "";
@@ -26,6 +37,12 @@ function getStored(key: string): string {
 /** API key from localStorage (set on login screen). */
 export function getEncatchApiKey(): string {
 	return getStored(ENCATCH_STORAGE_KEYS.API_KEY).trim();
+}
+
+/** Host (e.g. https://app.dev.encatch.com) from localStorage. Empty means use default. */
+export function getEncatchHost(): string {
+	const stored = getStored(ENCATCH_STORAGE_KEYS.HOST).trim();
+	return stored || ENCATCH_DEFAULT_HOST;
 }
 
 /** Default feedback form ID 1 from localStorage. Use when opening feedback. */
@@ -77,7 +94,8 @@ export function initEncatch(): void {
 		return;
 	}
 	const isProd = import.meta.env.PROD;
-	const encatchOrigin = isProd ? "https://app.dev.encatch.com" : window.location.origin;
+	const storedHost = getStored(ENCATCH_STORAGE_KEYS.HOST).trim();
+	const encatchOrigin = storedHost || (isProd ? ENCATCH_DEFAULT_HOST : window.location.origin);
 	_encatch.init(apiKey, {
 		webHost: encatchOrigin,
 		apiBaseUrl: encatchOrigin,
