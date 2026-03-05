@@ -38,6 +38,19 @@ interface EventLogEntry {
 	at: string;
 }
 
+async function generateHMACSignature(userId: string, secretKey: string, datetimeUTC?: string): Promise<string> {
+	const message = datetimeUTC ? `${userId}|${datetimeUTC}` : userId;
+	const enc = new TextEncoder();
+	const keyBytes = enc.encode(secretKey);
+	const messageBytes = enc.encode(message);
+	const cryptoKey = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+	const signature = await crypto.subtle.sign("HMAC", cryptoKey, messageBytes);
+	const hex = Array.from(new Uint8Array(signature))
+		.map((b) => b.toString(16).padStart(2, "0"))
+		.join("");
+	return hex;
+}
+
 export default function EncatchTestPage() {
 	// trackEvent
 	const [trackEventName, setTrackEventName] = useState("test_event");
@@ -57,8 +70,8 @@ export default function EncatchTestPage() {
 	const [showIdentifyOptions, setShowIdentifyOptions] = useState(false);
 	const [identifyLocale, setIdentifyLocale] = useState("");
 	const [identifyCountry, setIdentifyCountry] = useState("");
-	const [identifySecureSignature, setIdentifySecureSignature] = useState("");
-	const [identifySecureTime, setIdentifySecureTime] = useState("");
+	const [identifySecretKey, setIdentifySecretKey] = useState("");
+	const [identifyIncludeDateTime, setIdentifyIncludeDateTime] = useState(false);
 	const [identifyResult, setIdentifyResult] = useState<string | null>(null);
 
 	// setLocale
@@ -88,6 +101,7 @@ export default function EncatchTestPage() {
 	// Session / reset
 	const [sessionResult, setSessionResult] = useState<string | null>(null);
 	const [resetUserResult, setResetUserResult] = useState<string | null>(null);
+	const [clearDeviceIdResult, setClearDeviceIdResult] = useState<string | null>(null);
 
 	// Event log (on callback)
 	const [eventLog, setEventLog] = useState<EventLogEntry[]>([]);
@@ -164,17 +178,19 @@ export default function EncatchTestPage() {
 		}
 	};
 
-	const handleIdentify = () => {
+	const handleIdentify = async () => {
 		setIdentifyResult(null);
 		try {
 			const traits = identifyTraitsFromFields();
 			const options: { locale?: string; country?: string; secure?: { signature: string; generatedDateTimeinUTC?: string } } = {};
 			if (identifyLocale.trim()) options.locale = identifyLocale.trim();
 			if (identifyCountry.trim()) options.country = identifyCountry.trim();
-			if (identifySecureSignature.trim()) {
+			if (identifySecretKey.trim()) {
+				const datetimeUTC = identifyIncludeDateTime ? new Date().toISOString() : undefined;
+				const signature = await generateHMACSignature(identifyUserName.trim() || "anonymous", identifySecretKey.trim(), datetimeUTC);
 				options.secure = {
-					signature: identifySecureSignature.trim(),
-					...(identifySecureTime.trim() && { generatedDateTimeinUTC: identifySecureTime.trim() }),
+					signature,
+					...(datetimeUTC && { generatedDateTimeinUTC: datetimeUTC }),
 				};
 			}
 			const userName = identifyUserName.trim() || "anonymous";
@@ -275,6 +291,21 @@ export default function EncatchTestPage() {
 			setResetUserResult("User reset (anonymous; session cleared)");
 		} catch (e) {
 			setResetUserResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+		}
+	};
+
+	const ENCATCH_DEVICE_ID_KEY = "encatch_device_id";
+	const handleClearDeviceId = () => {
+		setClearDeviceIdResult(null);
+		try {
+			if (typeof localStorage !== "undefined") {
+				localStorage.removeItem(ENCATCH_DEVICE_ID_KEY);
+				setClearDeviceIdResult("encatch_device_id removed from localStorage. Refresh the page for a new device ID.");
+			} else {
+				setClearDeviceIdResult("localStorage not available.");
+			}
+		} catch (e) {
+			setClearDeviceIdResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
 		}
 	};
 
@@ -562,32 +593,32 @@ export default function EncatchTestPage() {
 										</div>
 									</div>
 									<div className="flex flex-col gap-1">
-										<Label htmlFor="identify-secure-sig" className="text-xs">
-											secure.signature
+										<Label htmlFor="identify-secret-key" className="text-xs">
+											Secret Key (optional)
 										</Label>
 										<Input
-											id="identify-secure-sig"
-											value={identifySecureSignature}
-											onChange={(e) => setIdentifySecureSignature(e.target.value)}
-											placeholder="Optional signature"
+											id="identify-secret-key"
+											type="password"
+											value={identifySecretKey}
+											onChange={(e) => setIdentifySecretKey(e.target.value)}
+											placeholder="Enter secret key for HMAC signature"
 										/>
 									</div>
-									<div className="flex flex-col gap-1">
-										<Label htmlFor="identify-secure-time" className="text-xs">
-											secure.generatedDateTimeinUTC
-										</Label>
-										<Input
-											id="identify-secure-time"
-											value={identifySecureTime}
-											onChange={(e) => setIdentifySecureTime(e.target.value)}
-											placeholder="Optional ISO datetime UTC"
+									<label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+										<input
+											type="checkbox"
+											checked={identifyIncludeDateTime}
+											onChange={(e) => setIdentifyIncludeDateTime(e.target.checked)}
+											disabled={!identifySecretKey.trim()}
+											className="rounded"
 										/>
-									</div>
+										Include datetime in signature
+									</label>
 								</div>
 							)}
 						</div>
 
-						<Button onClick={handleIdentify}>Identify user</Button>
+						<Button onClick={() => void handleIdentify()}>Identify user</Button>
 						{identifyResult && (
 							<Text variant="caption" className="text-muted-foreground">
 								{identifyResult}
@@ -648,10 +679,13 @@ export default function EncatchTestPage() {
 							<Button variant="outline" onClick={handleResetUser}>
 								Reset user
 							</Button>
+							<Button variant="outline" onClick={handleClearDeviceId}>
+								Clear device ID
+							</Button>
 						</div>
-						{(sessionResult || resetUserResult) && (
+						{(sessionResult || resetUserResult || clearDeviceIdResult) && (
 							<Text variant="caption" className="text-muted-foreground">
-								{sessionResult ?? resetUserResult}
+								{sessionResult ?? resetUserResult ?? clearDeviceIdResult}
 							</Text>
 						)}
 					</div>
