@@ -2,6 +2,7 @@ import { useLoginStateContext } from "@/pages/sys/login/providers/login-provider
 import { useRouter } from "@/routes/hooks";
 import { _encatch } from "@/lib/encatch";
 import { useUserActions, useUserInfo } from "@/store/userStore";
+import { clearAllStorageOnLogout } from "@/utils/storage";
 import { Button } from "@/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/ui/dropdown-menu";
 import { useTranslation } from "react-i18next";
@@ -22,6 +23,7 @@ export default function AccountDropdown() {
 			_encatch.trackEvent("user_logged_out");
 			_encatch.resetUser();
 			clearUserInfoAndToken();
+			clearAllStorageOnLogout();
 			backToLogin();
 		} catch (error) {
 			console.log(error);

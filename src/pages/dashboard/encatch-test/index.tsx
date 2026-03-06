@@ -16,6 +16,7 @@ import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { Text } from "@/ui/typography";
+import { clearAllStorageOnLogout } from "@/utils/storage";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -486,11 +487,10 @@ export default function EncatchTestPage() {
 
 	const handleClearTestStorage = () => {
 		try {
-			for (const k of Object.values(ENCATCH_TEST_STORAGE_KEYS) as string[]) {
-				localStorage.removeItem(k);
-			}
-			localStorage.removeItem(ENCATCH_STORAGE_KEYS.API_KEYS_LIST);
+			clearAllStorageOnLogout();
 			// Reset form state to defaults
+			setEncatchApiKey("");
+			setEncatchHost(ENCATCH_DEFAULT_HOST);
 			setIdentifyUserName("user_123");
 			setIdentifySetEmail("user_123@example.com");
 			setIdentifySetDisplayName("Test User");
@@ -498,14 +498,14 @@ export default function EncatchTestPage() {
 			setScreenName("/dashboard/encatch-test");
 			setLanguage("en");
 			setCountry("US");
-			setFeedbackFormId1(getEncatchFeedbackFormId1());
-			setFeedbackFormId2(getEncatchFeedbackFormId2());
+			setFeedbackFormId1("");
+			setFeedbackFormId2("");
 			setResetMode1("always");
 			setResetMode2("always");
 			setPrefillQuestionId("");
 			setPrefillValue("");
 			setSavedApiKeys([]);
-			toast.success("Test page storage cleared.");
+			toast.success("All storage cleared (localStorage, sessionStorage, cookies, IndexedDB).");
 		} catch {
 			toast.error("Failed to clear storage.");
 		}
