@@ -1,11 +1,23 @@
 import { Icon } from "@/components/icon";
-import { getEncatchFeedbackFormId1, getEncatchFeedbackFormId2, _encatch, mapTraitsToSdk } from "@/lib/encatch";
+import {
+	ENCATCH_DEFAULT_HOST,
+	ENCATCH_HOST_OPTIONS,
+	ENCATCH_STORAGE_KEYS,
+	ENCATCH_TEST_STORAGE_KEYS,
+	getEncatchFeedbackFormId1,
+	getEncatchFeedbackFormId2,
+	initEncatch,
+	_encatch,
+	mapTraitsToSdk,
+} from "@/lib/encatch";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card";
 import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { Text } from "@/ui/typography";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 type ResetMode = "always" | "on-complete" | "never";
 
@@ -51,22 +63,64 @@ async function generateHMACSignature(userId: string, secretKey: string, datetime
 	return hex;
 }
 
+function getTestStored(key: string): string {
+	if (typeof window === "undefined" || typeof localStorage === "undefined") return "";
+	try {
+		return localStorage.getItem(key) ?? "";
+	} catch {
+		return "";
+	}
+}
+
+function setTestStored(key: string, value: string): void {
+	try {
+		if (typeof localStorage !== "undefined") localStorage.setItem(key, value);
+	} catch {
+		// ignore
+	}
+}
+
+function getApiKeysList(): string[] {
+	try {
+		const raw = localStorage.getItem(ENCATCH_STORAGE_KEYS.API_KEYS_LIST) ?? "[]";
+		const arr = JSON.parse(raw);
+		return Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : [];
+	} catch {
+		return [];
+	}
+}
+
+function addApiKeyToList(key: string): void {
+	if (!key.trim()) return;
+	const list = getApiKeysList();
+	if (list.includes(key.trim())) return;
+	list.unshift(key.trim());
+	localStorage.setItem(ENCATCH_STORAGE_KEYS.API_KEYS_LIST, JSON.stringify(list.slice(0, 20)));
+}
+
+function generateRandomUser(): { username: string; email: string; displayName: string } {
+	const id = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+	return {
+		username: `user_${id}`,
+		email: `user_${id}@example.com`,
+		displayName: `Test User ${id.slice(0, 6)}`,
+	};
+}
+
 export default function EncatchTestPage() {
 	// trackEvent
-	const [trackEventName, setTrackEventName] = useState("test_event");
+	const [trackEventName, setTrackEventName] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.TRACK_EVENT_NAME) || "test_event");
 	const [trackResult, setTrackResult] = useState<string | null>(null);
 
 	// identifyUser
-	const [identifyUserName, setIdentifyUserName] = useState("user_123");
-	// Simple trait fields (no JSON)
-	const [identifySetEmail, setIdentifySetEmail] = useState("user_123@example.com");
-	const [identifySetDisplayName, setIdentifySetDisplayName] = useState("Test User");
+	const [identifyUserName, setIdentifyUserName] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.IDENTIFY_USERNAME) || "user_123");
+	const [identifySetEmail, setIdentifySetEmail] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.IDENTIFY_EMAIL) || "user_123@example.com");
+	const [identifySetDisplayName, setIdentifySetDisplayName] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.IDENTIFY_DISPLAY_NAME) || "Test User");
 	const [identifySetExtra, setIdentifySetExtra] = useState<KeyValueRow[]>([]);
 	const [identifySetOncePairs, setIdentifySetOncePairs] = useState<KeyValueRow[]>([]);
 	const [identifyIncrementPairs, setIdentifyIncrementPairs] = useState<KeyValueRow[]>([]);
 	const [identifyDecrementPairs, setIdentifyDecrementPairs] = useState<KeyValueRow[]>([]);
 	const [identifyUnsetKeys, setIdentifyUnsetKeys] = useState("");
-	// Options (collapsible)
 	const [showIdentifyOptions, setShowIdentifyOptions] = useState(false);
 	const [identifyLocale, setIdentifyLocale] = useState("");
 	const [identifyCountry, setIdentifyCountry] = useState("");
@@ -74,29 +128,33 @@ export default function EncatchTestPage() {
 	const [identifyIncludeDateTime, setIdentifyIncludeDateTime] = useState(false);
 	const [identifyResult, setIdentifyResult] = useState<string | null>(null);
 
-	// setLocale
-	const [language, setLanguage] = useState("en");
+	// setLocale / setCountry
+	const [language, setLanguage] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.LANGUAGE) || "en");
 	const [languageResult, setLanguageResult] = useState<string | null>(null);
-
-	// setCountry
-	const [country, setCountry] = useState("US");
+	const [country, setCountry] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.COUNTRY) || "US");
 	const [countryResult, setCountryResult] = useState<string | null>(null);
 
 	// trackScreen
-	const [screenName, setScreenName] = useState("/dashboard/encatch-test");
+	const [screenName, setScreenName] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.SCREEN_NAME) || "/dashboard/encatch-test");
 	const [trackScreenResult, setTrackScreenResult] = useState<string | null>(null);
 
-	// showForm (default from localStorage)
-	const [feedbackFormId1, setFeedbackFormId1] = useState(() => getEncatchFeedbackFormId1());
-	const [feedbackFormId2, setFeedbackFormId2] = useState(() => getEncatchFeedbackFormId2());
-	const [resetMode1, setResetMode1] = useState<ResetMode>("always");
-	const [resetMode2, setResetMode2] = useState<ResetMode>("always");
+	// showForm
+	const [feedbackFormId1, setFeedbackFormId1] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.FEEDBACK_FORM_ID_1) || getEncatchFeedbackFormId1());
+	const [feedbackFormId2, setFeedbackFormId2] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.FEEDBACK_FORM_ID_2) || getEncatchFeedbackFormId2());
+	const [resetMode1, setResetMode1] = useState<ResetMode>(() => (getTestStored(ENCATCH_TEST_STORAGE_KEYS.RESET_MODE_1) as ResetMode) || "always");
+	const [resetMode2, setResetMode2] = useState<ResetMode>(() => (getTestStored(ENCATCH_TEST_STORAGE_KEYS.RESET_MODE_2) as ResetMode) || "always");
 	const [showFormResult, setShowFormResult] = useState<string | null>(null);
 
 	// addToResponse
-	const [prefillQuestionId, setPrefillQuestionId] = useState("");
-	const [prefillValue, setPrefillValue] = useState("");
+	const [prefillQuestionId, setPrefillQuestionId] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_QUESTION_ID));
+	const [prefillValue, setPrefillValue] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_VALUE));
 	const [addToResponseResult, setAddToResponseResult] = useState<string | null>(null);
+
+	// Encatch config (API key + host) — from localStorage, synced with login
+	const [encatchApiKey, setEncatchApiKey] = useState("");
+	const [encatchHost, setEncatchHost] = useState(ENCATCH_DEFAULT_HOST);
+	const [savedApiKeys, setSavedApiKeys] = useState<string[]>([]);
+	const [initResult, setInitResult] = useState<string | null>(null);
 
 	// Session / reset
 	const [sessionResult, setSessionResult] = useState<string | null>(null);
@@ -124,6 +182,49 @@ export default function EncatchTestPage() {
 		});
 		return () => unsubscribe();
 	}, [appendEvent]);
+
+	// Load Encatch config and saved API keys from localStorage on mount
+	useEffect(() => {
+		try {
+			setEncatchApiKey(localStorage.getItem(ENCATCH_STORAGE_KEYS.API_KEY) ?? "");
+			const storedHost = localStorage.getItem(ENCATCH_STORAGE_KEYS.HOST)?.trim() ?? "";
+			setEncatchHost(storedHost || ENCATCH_DEFAULT_HOST);
+			setSavedApiKeys(getApiKeysList());
+		} catch {
+			// ignore
+		}
+	}, []);
+
+	// Persist test form state to localStorage when values change
+	useEffect(() => {
+		setTestStored(ENCATCH_TEST_STORAGE_KEYS.IDENTIFY_USERNAME, identifyUserName);
+		setTestStored(ENCATCH_TEST_STORAGE_KEYS.IDENTIFY_EMAIL, identifySetEmail);
+		setTestStored(ENCATCH_TEST_STORAGE_KEYS.IDENTIFY_DISPLAY_NAME, identifySetDisplayName);
+		setTestStored(ENCATCH_TEST_STORAGE_KEYS.TRACK_EVENT_NAME, trackEventName);
+		setTestStored(ENCATCH_TEST_STORAGE_KEYS.SCREEN_NAME, screenName);
+		setTestStored(ENCATCH_TEST_STORAGE_KEYS.LANGUAGE, language);
+		setTestStored(ENCATCH_TEST_STORAGE_KEYS.COUNTRY, country);
+		setTestStored(ENCATCH_TEST_STORAGE_KEYS.FEEDBACK_FORM_ID_1, feedbackFormId1);
+		setTestStored(ENCATCH_TEST_STORAGE_KEYS.FEEDBACK_FORM_ID_2, feedbackFormId2);
+		setTestStored(ENCATCH_TEST_STORAGE_KEYS.RESET_MODE_1, resetMode1);
+		setTestStored(ENCATCH_TEST_STORAGE_KEYS.RESET_MODE_2, resetMode2);
+		setTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_QUESTION_ID, prefillQuestionId);
+		setTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_VALUE, prefillValue);
+	}, [
+		identifyUserName,
+		identifySetEmail,
+		identifySetDisplayName,
+		trackEventName,
+		screenName,
+		language,
+		country,
+		feedbackFormId1,
+		feedbackFormId2,
+		resetMode1,
+		resetMode2,
+		prefillQuestionId,
+		prefillValue,
+	]);
 
 	// Build traits object from simple fields (for preview and submit)
 	const identifyTraitsFromFields = useCallback((): Record<string, unknown> => {
@@ -347,6 +448,69 @@ export default function EncatchTestPage() {
 		}
 	};
 
+	const handleRandomUser = () => {
+		const { username, email, displayName } = generateRandomUser();
+		setIdentifyUserName(username);
+		setIdentifySetEmail(email);
+		setIdentifySetDisplayName(displayName);
+	};
+
+	const saveEncatchConfig = () => {
+		try {
+			const key = encatchApiKey.trim();
+			localStorage.setItem(ENCATCH_STORAGE_KEYS.API_KEY, key);
+			localStorage.setItem(ENCATCH_STORAGE_KEYS.HOST, encatchHost);
+			if (key) addApiKeyToList(key);
+			setSavedApiKeys(getApiKeysList());
+			toast.success("Encatch config saved. Click Initialize SDK or reload to apply.");
+		} catch {
+			toast.error("Failed to save Encatch config.");
+		}
+	};
+
+	const handleInitializeSdk = () => {
+		setInitResult(null);
+		try {
+			localStorage.setItem(ENCATCH_STORAGE_KEYS.API_KEY, encatchApiKey.trim());
+			localStorage.setItem(ENCATCH_STORAGE_KEYS.HOST, encatchHost);
+			if (encatchApiKey.trim()) addApiKeyToList(encatchApiKey.trim());
+			setSavedApiKeys(getApiKeysList());
+			initEncatch();
+			setInitResult("initEncatch() called. If SDK was already initialized, reload the page to use a new API key.");
+			toast.success("SDK initialization requested.");
+		} catch (e) {
+			setInitResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+			toast.error("Failed to initialize SDK.");
+		}
+	};
+
+	const handleClearTestStorage = () => {
+		try {
+			for (const k of Object.values(ENCATCH_TEST_STORAGE_KEYS) as string[]) {
+				localStorage.removeItem(k);
+			}
+			localStorage.removeItem(ENCATCH_STORAGE_KEYS.API_KEYS_LIST);
+			// Reset form state to defaults
+			setIdentifyUserName("user_123");
+			setIdentifySetEmail("user_123@example.com");
+			setIdentifySetDisplayName("Test User");
+			setTrackEventName("test_event");
+			setScreenName("/dashboard/encatch-test");
+			setLanguage("en");
+			setCountry("US");
+			setFeedbackFormId1(getEncatchFeedbackFormId1());
+			setFeedbackFormId2(getEncatchFeedbackFormId2());
+			setResetMode1("always");
+			setResetMode2("always");
+			setPrefillQuestionId("");
+			setPrefillValue("");
+			setSavedApiKeys([]);
+			toast.success("Test page storage cleared.");
+		} catch {
+			toast.error("Failed to clear storage.");
+		}
+	};
+
 	return (
 		<div className="flex flex-col gap-6">
 			<div className="flex items-center gap-2">
@@ -358,6 +522,78 @@ export default function EncatchTestPage() {
 					</Text>
 				</div>
 			</div>
+
+			{/* Encatch config: API key, host, save, initialize */}
+			<Section title="Encatch config" description="API key and host. Saved keys appear in the dropdown. Values are stored in localStorage.">
+				<div className="flex flex-col gap-3">
+					{savedApiKeys.length > 0 && (
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="encatch-api-key-select">Saved API keys</Label>
+							<Select
+								value={encatchApiKey && savedApiKeys.includes(encatchApiKey) ? encatchApiKey : ""}
+								onValueChange={(val) => {
+									setEncatchApiKey(val);
+									localStorage.setItem(ENCATCH_STORAGE_KEYS.API_KEY, val);
+								}}
+							>
+								<SelectTrigger id="encatch-api-key-select" className="w-full max-w-md">
+									<SelectValue placeholder="Select a saved API key" />
+								</SelectTrigger>
+								<SelectContent>
+									{savedApiKeys.map((k) => (
+										<SelectItem key={k} value={k} className="font-mono text-xs">
+											{k.length > 28 ? `${k.slice(0, 28)}…` : k}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+					)}
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor="encatch-api-key">Encatch API key</Label>
+						<Input
+							id="encatch-api-key"
+							type="text"
+							placeholder="e.g. en_dev_..."
+							value={encatchApiKey}
+							onChange={(e) => setEncatchApiKey(e.target.value)}
+							autoComplete="off"
+							className="max-w-md"
+						/>
+					</div>
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor="encatch-host">Encatch host</Label>
+						<Select value={encatchHost} onValueChange={setEncatchHost}>
+							<SelectTrigger id="encatch-host" className="w-full max-w-md">
+								<SelectValue placeholder="Select host" />
+							</SelectTrigger>
+							<SelectContent>
+								{ENCATCH_HOST_OPTIONS.map((opt) => (
+									<SelectItem key={opt.value} value={opt.value}>
+										{opt.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+					<div className="flex flex-wrap items-center gap-2">
+						<Button type="button" variant="outline" size="sm" onClick={saveEncatchConfig}>
+							Save Encatch config
+						</Button>
+						<Button type="button" size="sm" onClick={handleInitializeSdk}>
+							Initialize SDK
+						</Button>
+						<Button type="button" variant="destructive" size="sm" onClick={handleClearTestStorage}>
+							Clear test page storage
+						</Button>
+					</div>
+					{initResult && (
+						<Text variant="caption" className="text-muted-foreground">
+							{initResult}
+						</Text>
+					)}
+				</div>
+			</Section>
 
 			{/* Event log from _encatch.on() */}
 			<Section
@@ -440,7 +676,18 @@ export default function EncatchTestPage() {
 					<div className="flex flex-col gap-4">
 						<div className="flex flex-col gap-1.5">
 							<Label htmlFor="identify-user-name">User name</Label>
-							<Input id="identify-user-name" value={identifyUserName} onChange={(e) => setIdentifyUserName(e.target.value)} placeholder="user_123" />
+							<div className="flex gap-2">
+								<Input
+									id="identify-user-name"
+									value={identifyUserName}
+									onChange={(e) => setIdentifyUserName(e.target.value)}
+									placeholder="user_123"
+									className="flex-1"
+								/>
+								<Button type="button" variant="outline" onClick={handleRandomUser} title="Generate random username, email, and display name">
+									Random user
+								</Button>
+							</div>
 						</div>
 
 						{/* Traits: simple fields */}
@@ -780,10 +1027,11 @@ export default function EncatchTestPage() {
 
 			<Section
 				title="init"
-				description="init(apiKey, config) is called once by EncatchProvider on app load. API key and feedback form ID are set on the login screen (Encatch section)."
+				description="init(apiKey, config) is called once by EncatchProvider on app load. Use the Encatch config section above to set API key and host, then click Initialize SDK (or reload)."
 			>
 				<Text variant="caption" className="text-muted-foreground">
-					Set the Encatch API key and feedback form ID on the login screen, then reload. EncatchProvider initializes the SDK from localStorage.
+					Set the Encatch API key and host in the Encatch config section above, then click &quot;Initialize SDK&quot;. If the SDK was already initialized with
+					another key, reload the page to apply a new one.
 				</Text>
 			</Section>
 		</div>

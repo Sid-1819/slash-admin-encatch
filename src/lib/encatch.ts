@@ -13,6 +13,25 @@ export const ENCATCH_STORAGE_KEYS = {
 	HOST: "encatch_host",
 	FEEDBACK_FORM_ID_1: "encatch_feedback_form_id_1",
 	FEEDBACK_FORM_ID_2: "encatch_feedback_form_id_2",
+	/** JSON array of used API keys for dropdown on encatch-test page. */
+	API_KEYS_LIST: "encatch_api_keys_list",
+} as const;
+
+/** localStorage keys for encatch-test page form state (persist across reload). */
+export const ENCATCH_TEST_STORAGE_KEYS = {
+	IDENTIFY_USERNAME: "encatch_test_identify_username",
+	IDENTIFY_EMAIL: "encatch_test_identify_email",
+	IDENTIFY_DISPLAY_NAME: "encatch_test_identify_display_name",
+	TRACK_EVENT_NAME: "encatch_test_track_event_name",
+	SCREEN_NAME: "encatch_test_screen_name",
+	LANGUAGE: "encatch_test_language",
+	COUNTRY: "encatch_test_country",
+	FEEDBACK_FORM_ID_1: "encatch_test_feedback_form_id_1",
+	FEEDBACK_FORM_ID_2: "encatch_test_feedback_form_id_2",
+	RESET_MODE_1: "encatch_test_reset_mode_1",
+	RESET_MODE_2: "encatch_test_reset_mode_2",
+	PREFILL_QUESTION_ID: "encatch_test_prefill_question_id",
+	PREFILL_VALUE: "encatch_test_prefill_value",
 } as const;
 
 /** Default Encatch host when none is configured (UAT). */
