@@ -2,17 +2,14 @@ import { DB_USER } from "@/_mock/assets_backup";
 import type { SignInReq } from "@/api/services/userService";
 import { Icon } from "@/components/icon";
 import { GLOBAL_CONFIG } from "@/global-config";
-import { ENCATCH_DEFAULT_HOST, ENCATCH_HOST_OPTIONS, ENCATCH_STORAGE_KEYS, _encatch } from "@/lib/encatch";
 import { useSignIn } from "@/store/userStore";
 import { Button } from "@/ui/button";
 import { Checkbox } from "@/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/ui/form";
 import { Input } from "@/ui/input";
-import { Label } from "@/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { cn } from "@/utils";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -23,8 +20,6 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 	const { t } = useTranslation();
 	const [loading, setLoading] = useState(false);
 	const [remember, setRemember] = useState(true);
-	const [encatchApiKey, setEncatchApiKey] = useState("");
-	const [encatchHost, setEncatchHost] = useState(ENCATCH_DEFAULT_HOST);
 	const navigatge = useNavigate();
 
 	const { loginState, setLoginState } = useLoginStateContext();
@@ -36,36 +31,9 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 		},
 	});
 
-	// Load Encatch API key and host from localStorage on mount
-	useEffect(() => {
-		try {
-			setEncatchApiKey(localStorage.getItem(ENCATCH_STORAGE_KEYS.API_KEY) ?? "");
-			const stored = localStorage.getItem(ENCATCH_STORAGE_KEYS.HOST)?.trim() ?? "";
-			setEncatchHost(stored || ENCATCH_DEFAULT_HOST);
-		} catch {
-			// ignore
-		}
-	}, []);
-
-	const saveEncatchConfig = () => {
-		try {
-			localStorage.setItem(ENCATCH_STORAGE_KEYS.API_KEY, encatchApiKey.trim());
-			localStorage.setItem(ENCATCH_STORAGE_KEYS.HOST, encatchHost);
-			toast.success("Encatch config saved. Reload the app to apply.");
-		} catch {
-			toast.error("Failed to save Encatch config.");
-		}
-	};
-
 	if (loginState !== LoginStateEnum.LOGIN) return null;
 
 	const handleFinish = async (values: SignInReq) => {
-		try {
-			localStorage.setItem(ENCATCH_STORAGE_KEYS.API_KEY, encatchApiKey.trim());
-			localStorage.setItem(ENCATCH_STORAGE_KEYS.HOST, encatchHost);
-		} catch {
-			// ignore
-		}
 		setLoading(true);
 		try {
 			await signIn(values);
@@ -75,7 +43,6 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 			});
 		} finally {
 			setLoading(false);
-			_encatch.trackEvent("user_logged_in");
 		}
 	};
 
@@ -89,7 +56,6 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 			});
 		} finally {
 			setLoading(false);
-			_encatch.trackEvent("guest_logged_in");
 		}
 	};
 
@@ -116,35 +82,6 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 							</FormItem>
 						)}
 					/>
-
-					{/* Encatch API key and host */}
-					<div className="space-y-2">
-						<Label htmlFor="encatch-api-key">Encatch API key</Label>
-						<Input
-							id="encatch-api-key"
-							type="text"
-							placeholder="e.g. en_dev_..."
-							value={encatchApiKey}
-							onChange={(e) => setEncatchApiKey(e.target.value)}
-							autoComplete="off"
-						/>
-						<Label htmlFor="encatch-host">Encatch host</Label>
-						<Select value={encatchHost} onValueChange={setEncatchHost}>
-							<SelectTrigger id="encatch-host" className="w-full">
-								<SelectValue placeholder="Select host" />
-							</SelectTrigger>
-							<SelectContent>
-								{ENCATCH_HOST_OPTIONS.map((opt) => (
-									<SelectItem key={opt.value} value={opt.value}>
-										{opt.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-						<Button type="button" variant="outline" size="sm" onClick={saveEncatchConfig}>
-							Save Encatch config
-						</Button>
-					</div>
 
 					{/* 记住我 */}
 					<div className="flex items-center space-x-2">

@@ -511,6 +511,53 @@ export default function EncatchTestPage() {
 		}
 	};
 
+	/** Clear localStorage, sessionStorage, and IndexedDB but keep Encatch API key, host, and API keys list. */
+	const handleClearAllExceptApiKey = async () => {
+		try {
+			let savedApiKey: string | null = null;
+			let savedHost: string | null = null;
+			let savedApiKeysList: string | null = null;
+			if (typeof localStorage !== "undefined") {
+				savedApiKey = localStorage.getItem(ENCATCH_STORAGE_KEYS.API_KEY);
+				savedHost = localStorage.getItem(ENCATCH_STORAGE_KEYS.HOST);
+				savedApiKeysList = localStorage.getItem(ENCATCH_STORAGE_KEYS.API_KEYS_LIST);
+				localStorage.clear();
+				if (savedApiKey != null) localStorage.setItem(ENCATCH_STORAGE_KEYS.API_KEY, savedApiKey);
+				if (savedHost != null) localStorage.setItem(ENCATCH_STORAGE_KEYS.HOST, savedHost);
+				if (savedApiKeysList != null) localStorage.setItem(ENCATCH_STORAGE_KEYS.API_KEYS_LIST, savedApiKeysList);
+			}
+			if (typeof sessionStorage !== "undefined") sessionStorage.clear();
+			if (typeof indexedDB !== "undefined") {
+				const idb = indexedDB as IDBFactory & { databases?: () => Promise<{ name: string }[]> };
+				if (typeof idb.databases === "function") {
+					const dbs = await idb.databases();
+					for (const db of dbs) {
+						if (db.name) indexedDB.deleteDatabase(db.name);
+					}
+				}
+			}
+			// Reset form state but keep API key, host, and saved keys list
+			setEncatchHost(savedHost?.trim() || ENCATCH_DEFAULT_HOST);
+			setIdentifyUserName("user_123");
+			setIdentifySetEmail("user_123@example.com");
+			setIdentifySetDisplayName("Test User");
+			setTrackEventName("test_event");
+			setScreenName("/dashboard/encatch-test");
+			setLanguage("en");
+			setCountry("US");
+			setFeedbackFormId1("");
+			setFeedbackFormId2("");
+			setResetMode1("always");
+			setResetMode2("always");
+			setPrefillQuestionId("");
+			setPrefillValue("");
+			setSavedApiKeys(getApiKeysList());
+			toast.success("Cleared local/session/IndexedDB; API key, host, and saved keys kept.");
+		} catch {
+			toast.error("Failed to clear storage.");
+		}
+	};
+
 	return (
 		<div className="flex flex-col gap-6">
 			<div className="flex items-center gap-2">
@@ -585,6 +632,9 @@ export default function EncatchTestPage() {
 						</Button>
 						<Button type="button" variant="destructive" size="sm" onClick={handleClearTestStorage}>
 							Clear test page storage
+						</Button>
+						<Button type="button" variant="destructive" size="sm" onClick={() => handleClearAllExceptApiKey()}>
+							Clear all storage (keep API key)
 						</Button>
 					</div>
 					{initResult && (
