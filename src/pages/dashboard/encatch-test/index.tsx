@@ -558,6 +558,11 @@ export default function EncatchTestPage() {
 		}
 	};
 
+	const handleClearAllExceptApiKeyAndReload = async () => {
+		await handleClearAllExceptApiKey();
+		window.location.reload();
+	};
+
 	return (
 		<div className="flex flex-col gap-6">
 			<div className="flex items-center gap-2">
@@ -635,6 +640,9 @@ export default function EncatchTestPage() {
 						</Button>
 						<Button type="button" variant="destructive" size="sm" onClick={() => handleClearAllExceptApiKey()}>
 							Clear all storage (keep API key)
+						</Button>
+						<Button type="button" variant="destructive" size="sm" onClick={() => handleClearAllExceptApiKeyAndReload()}>
+							Clear all storage (keep API key) & reload
 						</Button>
 					</div>
 					{initResult && (
