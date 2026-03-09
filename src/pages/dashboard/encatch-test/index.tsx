@@ -16,7 +16,6 @@ import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { Text } from "@/ui/typography";
-import { clearAllStorageOnLogout } from "@/utils/storage";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -485,32 +484,6 @@ export default function EncatchTestPage() {
 		}
 	};
 
-	const handleClearTestStorage = () => {
-		try {
-			clearAllStorageOnLogout();
-			// Reset form state to defaults
-			setEncatchApiKey("");
-			setEncatchHost(ENCATCH_DEFAULT_HOST);
-			setIdentifyUserName("user_123");
-			setIdentifySetEmail("user_123@example.com");
-			setIdentifySetDisplayName("Test User");
-			setTrackEventName("test_event");
-			setScreenName("/dashboard/encatch-test");
-			setLanguage("en");
-			setCountry("US");
-			setFeedbackFormId1("");
-			setFeedbackFormId2("");
-			setResetMode1("always");
-			setResetMode2("always");
-			setPrefillQuestionId("");
-			setPrefillValue("");
-			setSavedApiKeys([]);
-			toast.success("All storage cleared (localStorage, sessionStorage, cookies, IndexedDB).");
-		} catch {
-			toast.error("Failed to clear storage.");
-		}
-	};
-
 	/** Clear localStorage, sessionStorage, and IndexedDB but keep Encatch API key, host, and API keys list. */
 	const handleClearAllExceptApiKey = async () => {
 		try {
@@ -634,12 +607,6 @@ export default function EncatchTestPage() {
 						</Button>
 						<Button type="button" size="sm" onClick={handleInitializeSdk}>
 							Initialize SDK
-						</Button>
-						<Button type="button" variant="destructive" size="sm" onClick={handleClearTestStorage}>
-							Clear test page storage
-						</Button>
-						<Button type="button" variant="destructive" size="sm" onClick={() => handleClearAllExceptApiKey()}>
-							Clear all storage (keep API key)
 						</Button>
 						<Button type="button" variant="destructive" size="sm" onClick={() => handleClearAllExceptApiKeyAndReload()}>
 							Clear all storage (keep API key) & reload
