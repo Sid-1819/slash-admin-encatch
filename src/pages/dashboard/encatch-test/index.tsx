@@ -107,6 +107,18 @@ function generateRandomUser(): { username: string; email: string; displayName: s
 	};
 }
 
+/** Parse addToResponse value: JSON literals (numbers, booleans, null, arrays, objects, quoted strings) become native values; otherwise the trimmed text is used as a string. */
+function parseEncatchPrefillValue(raw: string): unknown {
+	const trimmed = raw.trim();
+	const text = trimmed || raw;
+	if (text === "") return "";
+	try {
+		return JSON.parse(text) as unknown;
+	} catch {
+		return text;
+	}
+}
+
 export default function EncatchTestPage() {
 	// trackEvent
 	const [trackEventName, setTrackEventName] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.TRACK_EVENT_NAME) || "test_event");
@@ -440,9 +452,9 @@ export default function EncatchTestPage() {
 				setAddToResponseResult("Error: question ID is required");
 				return;
 			}
-			const value = prefillValue.trim() || prefillValue;
+			const value = parseEncatchPrefillValue(prefillValue);
 			_encatch.addToResponse(qId, value);
-			setAddToResponseResult(`Prefill set: ${qId} = ${JSON.stringify(value)}`);
+			setAddToResponseResult(`Prefill set: ${qId} = ${JSON.stringify(value)} (${typeof value})`);
 		} catch (e) {
 			setAddToResponseResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
 		}
@@ -1029,7 +1041,10 @@ export default function EncatchTestPage() {
 					</div>
 				</Section>
 
-				<Section title="addToResponse" description="Prefill a form question by ID. Stored for current and future showForm(); also sent to visible iframes.">
+				<Section
+					title="addToResponse"
+					description="Prefill a form question by ID. Stored for current and future showForm(); also sent to visible iframes. Use JSON literals for typed values (e.g. 42, true, null, [&quot;a&quot;,&quot;b&quot;]); plain text stays a string."
+				>
 					<div className="flex flex-col gap-2">
 						<Label htmlFor="prefill-question-id">Question ID</Label>
 						<Input
@@ -1039,7 +1054,7 @@ export default function EncatchTestPage() {
 							placeholder="e.g. email or question slug"
 						/>
 						<Label htmlFor="prefill-value">Value</Label>
-						<Input id="prefill-value" value={prefillValue} onChange={(e) => setPrefillValue(e.target.value)} placeholder="Value to prefill" />
+						<Input id="prefill-value" value={prefillValue} onChange={(e) => setPrefillValue(e.target.value)} placeholder='Text or JSON: 42, true, "hello"' />
 						<Button onClick={handleAddToResponse}>Add to response</Button>
 						{addToResponseResult && (
 							<Text variant="caption" className="text-muted-foreground">
