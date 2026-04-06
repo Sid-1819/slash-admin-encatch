@@ -119,6 +119,47 @@ function parseEncatchPrefillValue(raw: string): unknown {
 	}
 }
 
+function loadShowFormContextRowsFromStorage(): KeyValueRow[] {
+	try {
+		const raw = getTestStored(ENCATCH_TEST_STORAGE_KEYS.SHOW_FORM_CONTEXT_ROWS);
+		if (!raw.trim()) return [];
+		const arr = JSON.parse(raw) as unknown;
+		if (!Array.isArray(arr)) return [];
+		return arr
+			.filter((x): x is Record<string, unknown> => x !== null && typeof x === "object")
+			.map((x) => ({
+				key: typeof x.key === "string" ? x.key : "",
+				value: typeof x.value === "string" ? x.value : "",
+				id: crypto.randomUUID(),
+			}));
+	} catch {
+		return [];
+	}
+}
+
+/** Build showForm context: only string | number | boolean (SDK ContextValue minus Date). */
+function buildShowFormContext(rows: KeyValueRow[]): {
+	context: Record<string, string | number | boolean> | undefined;
+	skippedKeys: string[];
+} {
+	const out: Record<string, string | number | boolean> = {};
+	const skippedKeys: string[] = [];
+	for (const { key, value } of rows) {
+		const k = key.trim();
+		if (!k) continue;
+		const parsed = parseEncatchPrefillValue(value);
+		if (typeof parsed === "string" || typeof parsed === "number" || typeof parsed === "boolean") {
+			out[k] = parsed;
+		} else {
+			skippedKeys.push(k);
+		}
+	}
+	return {
+		context: Object.keys(out).length > 0 ? out : undefined,
+		skippedKeys,
+	};
+}
+
 export default function EncatchTestPage() {
 	// trackEvent
 	const [trackEventName, setTrackEventName] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.TRACK_EVENT_NAME) || "test_event");
@@ -155,6 +196,7 @@ export default function EncatchTestPage() {
 	const [feedbackFormId2, setFeedbackFormId2] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.FEEDBACK_FORM_ID_2) || getEncatchFeedbackFormId2());
 	const [resetMode1, setResetMode1] = useState<ResetMode>(() => (getTestStored(ENCATCH_TEST_STORAGE_KEYS.RESET_MODE_1) as ResetMode) || "always");
 	const [resetMode2, setResetMode2] = useState<ResetMode>(() => (getTestStored(ENCATCH_TEST_STORAGE_KEYS.RESET_MODE_2) as ResetMode) || "always");
+	const [showFormContextRows, setShowFormContextRows] = useState<KeyValueRow[]>(() => loadShowFormContextRowsFromStorage());
 	const [showFormResult, setShowFormResult] = useState<string | null>(null);
 
 	// addToResponse
@@ -220,6 +262,7 @@ export default function EncatchTestPage() {
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.FEEDBACK_FORM_ID_2, feedbackFormId2);
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.RESET_MODE_1, resetMode1);
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.RESET_MODE_2, resetMode2);
+		setTestStored(ENCATCH_TEST_STORAGE_KEYS.SHOW_FORM_CONTEXT_ROWS, JSON.stringify(showFormContextRows.map(({ key, value }) => ({ key, value }))));
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_QUESTION_ID, prefillQuestionId);
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_VALUE, prefillValue);
 	}, [
@@ -234,6 +277,7 @@ export default function EncatchTestPage() {
 		feedbackFormId2,
 		resetMode1,
 		resetMode2,
+		showFormContextRows,
 		prefillQuestionId,
 		prefillValue,
 	]);
@@ -351,6 +395,16 @@ export default function EncatchTestPage() {
 		setIdentifyDecrementPairs((prev) => prev.filter((_, i) => i !== index));
 	}
 
+	function addShowFormContextRow() {
+		setShowFormContextRows((prev) => [...prev, { key: "", value: "", id: crypto.randomUUID() }]);
+	}
+	function updateShowFormContextRow(index: number, field: "key" | "value", val: string) {
+		setShowFormContextRows((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: val } : p)));
+	}
+	function removeShowFormContextRow(index: number) {
+		setShowFormContextRows((prev) => prev.filter((_, i) => i !== index));
+	}
+
 	const handleSetTheme = (theme: "light" | "dark" | "system") => {
 		try {
 			_encatch.setTheme(theme);
@@ -426,8 +480,14 @@ export default function EncatchTestPage() {
 		setShowFormResult(null);
 		try {
 			const formId = feedbackFormId1.trim() || getEncatchFeedbackFormId1();
-			_encatch.showForm(formId, { reset: resetMode1 });
-			setShowFormResult(`Form 1 opened (${formId}) with reset=${resetMode1}`);
+			const { context, skippedKeys } = buildShowFormContext(showFormContextRows);
+			if (skippedKeys.length > 0) {
+				setShowFormResult(`Error: showForm context values must be string, number, or boolean (use JSON literals). Invalid keys: ${skippedKeys.join(", ")}`);
+				return;
+			}
+			_encatch.showForm(formId, { reset: resetMode1, ...(context ? { context } : {}) });
+			const ctxMsg = context ? `, context=${JSON.stringify(context)}` : "";
+			setShowFormResult(`Form 1 opened (${formId}) with reset=${resetMode1}${ctxMsg}`);
 		} catch (e) {
 			setShowFormResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
 		}
@@ -437,8 +497,14 @@ export default function EncatchTestPage() {
 		setShowFormResult(null);
 		try {
 			const formId = feedbackFormId2.trim() || getEncatchFeedbackFormId2();
-			_encatch.showForm(formId, { reset: resetMode2 });
-			setShowFormResult(`Form 2 opened (${formId}) with reset=${resetMode2}`);
+			const { context, skippedKeys } = buildShowFormContext(showFormContextRows);
+			if (skippedKeys.length > 0) {
+				setShowFormResult(`Error: showForm context values must be string, number, or boolean (use JSON literals). Invalid keys: ${skippedKeys.join(", ")}`);
+				return;
+			}
+			_encatch.showForm(formId, { reset: resetMode2, ...(context ? { context } : {}) });
+			const ctxMsg = context ? `, context=${JSON.stringify(context)}` : "";
+			setShowFormResult(`Form 2 opened (${formId}) with reset=${resetMode2}${ctxMsg}`);
 		} catch (e) {
 			setShowFormResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
 		}
@@ -975,8 +1041,47 @@ export default function EncatchTestPage() {
 					</div>
 				</Section>
 
-				<Section title="showForm" description="Open a form by configuration ID. Reset mode: always (default), on-complete, or never.">
+				<Section
+					title="showForm"
+					description="Open a form by configuration ID. Reset mode: always (default), on-complete, or never. Optional context is passed to showForm(options) (string, number, or boolean per value — use JSON literals like addToResponse)."
+				>
 					<div className="flex flex-col gap-4">
+						<div className="flex flex-col gap-2 rounded-lg border border-border/50 bg-muted/20 p-3">
+							<div className="flex items-center justify-between gap-2">
+								<Label className="text-xs font-medium">Context (optional)</Label>
+								<Button type="button" variant="outline" size="sm" onClick={addShowFormContextRow}>
+									Add row
+								</Button>
+							</div>
+							<Text variant="caption" className="text-muted-foreground">
+								Same row set is used for both Open form 1 and Open form 2. Plain text is a string; use JSON for numbers/booleans (e.g. 42, true,
+								&quot;hello&quot;).
+							</Text>
+							{showFormContextRows.length === 0 && (
+								<Text variant="caption" className="text-muted-foreground italic">
+									No context rows — showForm is called without context.
+								</Text>
+							)}
+							{showFormContextRows.map((row, i) => (
+								<div key={row.id} className="flex flex-wrap gap-2">
+									<Input
+										placeholder="key"
+										value={row.key}
+										onChange={(e) => updateShowFormContextRow(i, "key", e.target.value)}
+										className="font-mono text-sm min-w-[100px] flex-1"
+									/>
+									<Input
+										placeholder='value or JSON: 42, true, "text"'
+										value={row.value}
+										onChange={(e) => updateShowFormContextRow(i, "value", e.target.value)}
+										className="font-mono text-sm min-w-[140px] flex-2"
+									/>
+									<Button type="button" variant="ghost" size="sm" onClick={() => removeShowFormContextRow(i)}>
+										Remove
+									</Button>
+								</div>
+							))}
+						</div>
 						<div className="flex flex-col gap-2">
 							<Label htmlFor="feedback-id-1">Form ID 1</Label>
 							<div className="flex flex-wrap items-end gap-2">
