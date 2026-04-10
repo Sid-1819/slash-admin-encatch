@@ -21,8 +21,8 @@ importers:
         specifier: ^3.2.2
         version: 3.2.2(react@19.2.4)
       '@encatch/web-sdk':
-        specifier: ^1.1.0-beta.1
-        version: 1.1.0-beta.1
+        specifier: ^1.1.0-beta.5
+        version: 1.1.0-beta.5
       '@fontsource-variable/inter':
         specifier: ^5.1.0
         version: 5.2.8
@@ -557,8 +557,8 @@ packages:
   '@emotion/unitless@0.7.5':
     resolution: {integrity: sha512-OWORNpfjMsSSUBVrRBVGECkhWcULOAJz9ZW8uK9qgxD+87M7jHRcvh/A96XXNhXTLmKcoYSQtBEX7lHMO7YRwg==}
 
-  '@encatch/web-sdk@1.1.0-beta.1':
-    resolution: {integrity: sha512-Oc2bn+7PdnKfqHnRtQatpQHaW4DpKSkLTAcaWYz8qPTcNXQrekoD8q5yMmm+oR5D1Se7bR9XH2C6swuEQCTpxA==}
+  '@encatch/web-sdk@1.1.0-beta.5':
+    resolution: {integrity: sha512-/9jpxQQ7mf1HHviZNAfTJO/2Mww3Rdguyr0s7BquKE4IwjPJHnaYQ/yD6oEGCugYd82l8EHL2dQGtVEaRYpsQg==}
     engines: {node: '>=18'}
 
   '@esbuild/aix-ppc64@0.25.12':
@@ -4854,7 +4854,7 @@ snapshots:
 
   '@emotion/unitless@0.7.5': {}
 
-  '@encatch/web-sdk@1.1.0-beta.1': {}
+  '@encatch/web-sdk@1.1.0-beta.5': {}
 
   '@esbuild/aix-ppc64@0.25.12':
     optional: true
