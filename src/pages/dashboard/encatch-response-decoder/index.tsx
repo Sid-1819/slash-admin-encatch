@@ -1,4 +1,5 @@
 import { Icon } from "@/components/icon";
+import { decodeEncatchRequestJson, isEncatchRequestEnvelope } from "@/lib/encatch-request-decode";
 import { decodeEncatchResponseNode } from "@/lib/encatch-response-decode";
 import "@/utils/highlight";
 import { Button } from "@/ui/button";
@@ -7,8 +8,11 @@ import { Label } from "@/ui/label";
 import { ScrollArea } from "@/ui/scroll-area";
 import { Textarea } from "@/ui/textarea";
 import { Text } from "@/ui/typography";
+import { cn } from "@/utils";
 import hljs from "highlight.js";
 import { useCallback, useMemo, useState } from "react";
+
+const panelScrollClass = "h-[min(480px,55vh)] max-h-[min(600px,70vh)]";
 
 export default function EncatchResponseDecoderPage() {
 	const [input, setInput] = useState("");
@@ -34,7 +38,7 @@ export default function EncatchResponseDecoderPage() {
 		}
 		try {
 			const parsed: unknown = JSON.parse(trimmed);
-			const decoded = decodeEncatchResponseNode(parsed);
+			const decoded = isEncatchRequestEnvelope(parsed) ? decodeEncatchRequestJson(parsed) : decodeEncatchResponseNode(parsed);
 			setDecodedJson(JSON.stringify(decoded, null, 2));
 		} catch (e) {
 			setError(e instanceof Error ? e.message : String(e));
@@ -54,7 +58,10 @@ export default function EncatchResponseDecoderPage() {
 				<div>
 					<h2 className="text-2xl font-bold">Encatch JSON decoder</h2>
 					<Text variant="body2" className="text-muted-foreground">
-						Paste wire-format Encatch JSON and decode it to readable JSON (objects with type keys, arrays, and scalars).
+						Paste wire-format Encatch JSON and decode it to readable JSON. Request envelopes{" "}
+						<code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">{"{ t, f, m }"}</code> are unwrapped and{" "}
+						<code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">itv</code> is added when{" "}
+						<code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">dateRange</code> can be split into start/end.
 					</Text>
 				</div>
 			</div>
@@ -72,7 +79,7 @@ export default function EncatchResponseDecoderPage() {
 							value={input}
 							onChange={(e) => setInput(e.target.value)}
 							placeholder='Paste encoded JSON here, e.g. {"t":10,"p":{...}}'
-							className="min-h-[250px] font-mono text-sm"
+							className={cn(panelScrollClass, "min-h-[180px] resize-y overflow-auto font-mono text-sm")}
 							spellCheck={false}
 						/>
 					</div>
@@ -99,8 +106,8 @@ export default function EncatchResponseDecoderPage() {
 						<CardDescription>Pretty-printed JSON after decoding Encatch node wrappers.</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<ScrollArea className="max-h-[min(600px,70vh)] rounded-md border border-border">
-							<pre className="m-0 p-4 text-sm">
+						<ScrollArea className={cn(panelScrollClass, "rounded-md border border-border")}>
+							<pre className="m-0 min-w-0 overflow-x-auto p-4 text-sm">
 								{highlightedHtml ? (
 									<code
 										className="hljs language-json font-mono whitespace-pre-wrap break-words"

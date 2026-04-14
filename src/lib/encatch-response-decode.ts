@@ -26,6 +26,19 @@ export function decodeEncatchResponseNode(node: unknown): unknown {
 		return n.a.map((item) => decodeEncatchResponseNode(item));
 	}
 
+	// Typed scalars: 0 = number, 1 = string, 2 = boolean (see Encatch wire requests)
+	if (typeof t === "number" && "s" in n) {
+		if (t === 0) {
+			return typeof n.s === "number" ? n.s : Number(n.s);
+		}
+		if (t === 1) {
+			return String(n.s);
+		}
+		if (t === 2) {
+			return n.s === 1 || n.s === true;
+		}
+	}
+
 	if ("s" in n) {
 		return n.s;
 	}
