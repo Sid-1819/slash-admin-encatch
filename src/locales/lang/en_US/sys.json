@@ -139,6 +139,7 @@
 			"workbench": "Workbench",
 			"encatch_test": "Encatch Test",
 			"encatch_instructions": "Encatch SDK Guide",
+			"encatch_response_decoder": "Encatch JSON Decoder",
 			"refiner_test": "Refiner Test"
 		},
 		"settings": {

@@ -27,6 +27,11 @@ export const frontendNavData: NavProps["data"] = [
 				icon: <Icon icon="solar:document-text-bold-duotone" size="24" />,
 			},
 			{
+				title: "sys.nav.encatch_response_decoder",
+				path: "/encatch-response-decoder",
+				icon: <Icon icon="solar:code-square-bold-duotone" size="24" />,
+			},
+			{
 				title: "sys.nav.refiner_test",
 				path: "/refiner-test",
 				icon: <Icon icon="solar:bug-minimalistic-bold-duotone" size="24" />,
