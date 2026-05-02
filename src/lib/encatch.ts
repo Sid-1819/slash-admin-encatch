@@ -80,6 +80,43 @@ export function getEncatchFeedbackFormId2(): string {
 export { _encatch };
 
 /**
+ * Session recording controls implemented by the remote Encatch script (`/s/sdk/v1/encatch.js`).
+ * They are attached to the SDK stub after load and are not listed on the published EncatchSDK typedef yet.
+ */
+export type EncatchSessionRecordingApi = {
+	pauseSession: () => void;
+	resumeSession: () => void;
+	stopSession: () => void;
+};
+
+function getEncatchSessionRecording(): Partial<EncatchSessionRecordingApi> {
+	return _encatch as typeof _encatch & Partial<EncatchSessionRecordingApi>;
+}
+
+function callEncatchSessionRecording(name: keyof EncatchSessionRecordingApi): void {
+	const fn = getEncatchSessionRecording()[name];
+	if (typeof fn !== "function") {
+		throw new Error(`${String(name)} is not available yet. Wait for the Encatch SDK script to finish loading (after init), then try again.`);
+	}
+	fn();
+}
+
+/** Pause session recording (ping / URL tracking behavior per remote SDK). */
+export function encatchPauseSession(): void {
+	callEncatchSessionRecording("pauseSession");
+}
+
+/** Resume session recording after pauseSession(). */
+export function encatchResumeSession(): void {
+	callEncatchSessionRecording("resumeSession");
+}
+
+/** Stop the current session per remote SDK (distinct from resetUser / clearAll). */
+export function encatchStopSession(): void {
+	callEncatchSessionRecording("stopSession");
+}
+
+/**
  * Map legacy trait keys to @encatch/web-sdk UserTraits format.
  * Use when you have traits as { $set, $set_once, $counter, $unset } and need to pass to _encatch.identifyUser.
  */

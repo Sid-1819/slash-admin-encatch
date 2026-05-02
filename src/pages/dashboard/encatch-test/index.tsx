@@ -6,6 +6,9 @@ import {
 	ENCATCH_TEST_STORAGE_KEYS,
 	getEncatchFeedbackFormId1,
 	getEncatchFeedbackFormId2,
+	encatchPauseSession,
+	encatchResumeSession,
+	encatchStopSession,
 	initEncatch,
 	_encatch,
 	mapTraitsToSdk,
@@ -212,6 +215,7 @@ export default function EncatchTestPage() {
 
 	// Session / reset
 	const [sessionResult, setSessionResult] = useState<string | null>(null);
+	const [sessionRecordingResult, setSessionRecordingResult] = useState<string | null>(null);
 	const [resetUserResult, setResetUserResult] = useState<string | null>(null);
 	const [clearDeviceIdResult, setClearDeviceIdResult] = useState<string | null>(null);
 
@@ -448,6 +452,36 @@ export default function EncatchTestPage() {
 			setSessionResult("Session started (ping interval + URL tracking enabled)");
 		} catch (e) {
 			setSessionResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+		}
+	};
+
+	const handlePauseSession = () => {
+		setSessionRecordingResult(null);
+		try {
+			encatchPauseSession();
+			setSessionRecordingResult("pauseSession() called");
+		} catch (e) {
+			setSessionRecordingResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+		}
+	};
+
+	const handleResumeSession = () => {
+		setSessionRecordingResult(null);
+		try {
+			encatchResumeSession();
+			setSessionRecordingResult("resumeSession() called");
+		} catch (e) {
+			setSessionRecordingResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+		}
+	};
+
+	const handleStopSession = () => {
+		setSessionRecordingResult(null);
+		try {
+			encatchStopSession();
+			setSessionRecordingResult("stopSession() called");
+		} catch (e) {
+			setSessionRecordingResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
 		}
 	};
 
@@ -1022,10 +1056,24 @@ export default function EncatchTestPage() {
 					</div>
 				</Section>
 
-				<Section title="startSession & resetUser" description="Start session (ping + URL tracking) or clear user/session (e.g. on logout).">
+				<Section
+					title="Session: start, pause, resume, stop & resetUser"
+					description="startSession enables ping + URL tracking. pauseSession / resumeSession / stopSession are provided by the loaded Encatch script (see encatch.js). resetUser clears identity; clear device ID forces a new device on reload."
+				>
 					<div className="flex flex-col gap-2">
 						<div className="flex flex-wrap items-center gap-2">
 							<Button onClick={handleStartSession}>Start session</Button>
+							<Button variant="outline" onClick={handlePauseSession}>
+								Pause session
+							</Button>
+							<Button variant="outline" onClick={handleResumeSession}>
+								Resume session
+							</Button>
+							<Button variant="outline" onClick={handleStopSession}>
+								Stop session
+							</Button>
+						</div>
+						<div className="flex flex-wrap items-center gap-2">
 							<Button variant="outline" onClick={handleResetUser}>
 								Reset user
 							</Button>
@@ -1033,9 +1081,9 @@ export default function EncatchTestPage() {
 								Clear device ID
 							</Button>
 						</div>
-						{(sessionResult || resetUserResult || clearDeviceIdResult) && (
+						{(sessionResult || sessionRecordingResult || resetUserResult || clearDeviceIdResult) && (
 							<Text variant="caption" className="text-muted-foreground">
-								{sessionResult ?? resetUserResult ?? clearDeviceIdResult}
+								{[sessionResult, sessionRecordingResult, resetUserResult, clearDeviceIdResult].filter(Boolean).join(" · ")}
 							</Text>
 						)}
 					</div>

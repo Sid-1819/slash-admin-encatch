@@ -1,7 +1,7 @@
 import { CardContent } from "@/ui/card";
 import { Card } from "antd";
+import { format } from "date-fns";
 import { styles } from "./styles";
-import { formatDate } from "date-fns";
 
 type PostCardProps = {
 	post: any;
@@ -13,26 +13,16 @@ type PostCardProps = {
 
 // Utility function to truncate text
 const truncateText = (text = "", maxLength = 120) => {
-	return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
+	return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 };
 
 // PostCard component for better organization
 const PostCard = ({ post, onViewDetails, isHovered, onHover, onLeave }: PostCardProps) => (
 	<Card
 		style={{
+			position: "relative",
 			...styles.card,
 			...(isHovered ? styles.cardHover : {}),
-		}}
-		onMouseEnter={onHover}
-		onMouseLeave={onLeave}
-		onClick={onViewDetails}
-		role="button"
-		tabIndex={0}
-		onKeyDown={(e) => {
-			if (e.key === "Enter" || e.key === " ") {
-				e.preventDefault();
-				onViewDetails();
-			}
 		}}
 	>
 		<CardContent style={{ padding: 16 }}>
@@ -58,7 +48,7 @@ const PostCard = ({ post, onViewDetails, isHovered, onHover, onLeave }: PostCard
 					</h3>
 					<div style={{ marginTop: 6 }}>
 						<span style={styles.meta}>By {post.author}</span>
-						<span style={styles.meta}>{formatDate(post.date, "PP")}</span>
+						<span style={styles.meta}>{format(new Date(post.date), "PP")}</span>
 						<span style={styles.meta}>
 							ID: <span style={styles.value}>{post.id}</span>
 						</span>
@@ -86,6 +76,24 @@ const PostCard = ({ post, onViewDetails, isHovered, onHover, onLeave }: PostCard
 				</div>
 			</div>
 		</CardContent>
+		<button
+			type="button"
+			aria-label={`View details: ${post.title}`}
+			onClick={onViewDetails}
+			onMouseEnter={onHover}
+			onMouseLeave={onLeave}
+			style={{
+				position: "absolute",
+				inset: 0,
+				width: "100%",
+				height: "100%",
+				margin: 0,
+				padding: 0,
+				border: "none",
+				background: "transparent",
+				cursor: "pointer",
+			}}
+		/>
 	</Card>
 );
 
