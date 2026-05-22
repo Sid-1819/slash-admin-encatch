@@ -347,7 +347,7 @@ export default function EncatchTestPage() {
 			if (identifyLocale.trim()) options.locale = identifyLocale.trim();
 			if (identifyCountry.trim()) options.country = identifyCountry.trim();
 			if (identifySecretKey.trim()) {
-				const datetimeUTC = identifyIncludeDateTime ? new Date().toISOString() : undefined;
+				const datetimeUTC = identifyIncludeDateTime ? String(Date.now()) : undefined;
 				const signature = await generateHMACSignature(identifyUserName.trim() || "anonymous", identifySecretKey.trim(), datetimeUTC);
 				options.secure = {
 					signature,
@@ -996,7 +996,7 @@ export default function EncatchTestPage() {
 											disabled={!identifySecretKey.trim()}
 											className="rounded"
 										/>
-										Include datetime in signature
+										Include timestamp (ms) in signature
 									</label>
 								</div>
 							)}
