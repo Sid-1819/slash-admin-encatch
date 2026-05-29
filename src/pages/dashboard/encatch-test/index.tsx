@@ -13,6 +13,15 @@ import {
 	_encatch,
 	mapTraitsToSdk,
 } from "@/lib/encatch";
+import {
+	BROWSER_OPTIONS,
+	DEFAULT_DEVICE_INFO_TEST_VALUES,
+	DEVICE_OS_OPTIONS,
+	DEVICE_TYPE_OPTIONS,
+	loadDeviceInfoTestValues,
+	saveDeviceInfoTestValues,
+	type DeviceInfoTestValues,
+} from "@/lib/device-info";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card";
 import { Input } from "@/ui/input";
@@ -23,6 +32,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type ResetMode = "always" | "on-complete" | "never";
+type EncatchTheme = "light" | "dark" | "system";
+
+const ENCATCH_THEME_OPTIONS: EncatchTheme[] = ["light", "dark", "system"];
+
+function parseStoredTheme(raw: string): EncatchTheme {
+	return raw === "light" || raw === "dark" || raw === "system" ? raw : "system";
+}
 
 type KeyValue = { key: string; value: string };
 type KeyValueRow = KeyValue & { id: string };
@@ -53,8 +69,9 @@ interface EventLogEntry {
 	at: string;
 }
 
+/** Matches core-backend ApiValidationUseCase: HMAC-SHA256(userName) or HMAC-SHA256(userName + epochMs). */
 async function generateHMACSignature(userId: string, secretKey: string, datetimeUTC?: string): Promise<string> {
-	const message = datetimeUTC ? `${userId}|${datetimeUTC}` : userId;
+	const message = datetimeUTC ? `${userId}${datetimeUTC}` : userId;
 	const enc = new TextEncoder();
 	const keyBytes = enc.encode(secretKey);
 	const messageBytes = enc.encode(message);
@@ -184,7 +201,9 @@ export default function EncatchTestPage() {
 	const [identifyIncludeDateTime, setIdentifyIncludeDateTime] = useState(false);
 	const [identifyResult, setIdentifyResult] = useState<string | null>(null);
 
-	// setLocale / setCountry
+	// setTheme / setLocale / setCountry
+	const [theme, setTheme] = useState<EncatchTheme>(() => parseStoredTheme(getTestStored(ENCATCH_TEST_STORAGE_KEYS.THEME)));
+	const [themeResult, setThemeResult] = useState<string | null>(null);
 	const [language, setLanguage] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.LANGUAGE) || "en");
 	const [languageResult, setLanguageResult] = useState<string | null>(null);
 	const [country, setCountry] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.COUNTRY) || "US");
@@ -206,6 +225,14 @@ export default function EncatchTestPage() {
 	const [prefillQuestionId, setPrefillQuestionId] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_QUESTION_ID));
 	const [prefillValue, setPrefillValue] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_VALUE));
 	const [addToResponseResult, setAddToResponseResult] = useState<string | null>(null);
+
+	// Device info — manual test values only (no UA auto-detect)
+	const [deviceType, setDeviceType] = useState(() => loadDeviceInfoTestValues().deviceType);
+	const [deviceOs, setDeviceOs] = useState(() => loadDeviceInfoTestValues().deviceOs);
+	const [deviceOsVersion, setDeviceOsVersion] = useState(() => loadDeviceInfoTestValues().deviceOsVersion);
+	const [browser, setBrowser] = useState(() => loadDeviceInfoTestValues().browser);
+	const [browserVersion, setBrowserVersion] = useState(() => loadDeviceInfoTestValues().browserVersion);
+	const [deviceInfoResult, setDeviceInfoResult] = useState<string | null>(null);
 
 	// Encatch config (API key + host) — from localStorage, synced with login
 	const [encatchApiKey, setEncatchApiKey] = useState("");
@@ -241,6 +268,17 @@ export default function EncatchTestPage() {
 		return () => unsubscribe();
 	}, [appendEvent]);
 
+	// Keep fetch patch in sync whenever manual device fields change
+	useEffect(() => {
+		saveDeviceInfoTestValues({
+			deviceType,
+			deviceOs,
+			deviceOsVersion,
+			browser,
+			browserVersion,
+		});
+	}, [deviceType, deviceOs, deviceOsVersion, browser, browserVersion]);
+
 	// Load Encatch config and saved API keys from localStorage on mount
 	useEffect(() => {
 		try {
@@ -260,6 +298,7 @@ export default function EncatchTestPage() {
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.IDENTIFY_DISPLAY_NAME, identifySetDisplayName);
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.TRACK_EVENT_NAME, trackEventName);
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.SCREEN_NAME, screenName);
+		setTestStored(ENCATCH_TEST_STORAGE_KEYS.THEME, theme);
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.LANGUAGE, language);
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.COUNTRY, country);
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.FEEDBACK_FORM_ID_1, feedbackFormId1);
@@ -275,6 +314,7 @@ export default function EncatchTestPage() {
 		identifySetDisplayName,
 		trackEventName,
 		screenName,
+		theme,
 		language,
 		country,
 		feedbackFormId1,
@@ -409,10 +449,14 @@ export default function EncatchTestPage() {
 		setShowFormContextRows((prev) => prev.filter((_, i) => i !== index));
 	}
 
-	const handleSetTheme = (theme: "light" | "dark" | "system") => {
+	const handleSetTheme = () => {
+		setThemeResult(null);
 		try {
 			_encatch.setTheme(theme);
-		} catch (_) {}
+			setThemeResult(`Theme set to: ${theme}`);
+		} catch (e) {
+			setThemeResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+		}
 	};
 
 	const handleSetLocale = () => {
@@ -507,6 +551,55 @@ export default function EncatchTestPage() {
 			}
 		} catch (e) {
 			setClearDeviceIdResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+		}
+	};
+
+	const buildDeviceValuesFromFields = useCallback((): DeviceInfoTestValues => {
+		return {
+			deviceType: deviceType.trim() || DEFAULT_DEVICE_INFO_TEST_VALUES.deviceType,
+			deviceOs: deviceOs.trim() || DEFAULT_DEVICE_INFO_TEST_VALUES.deviceOs,
+			deviceOsVersion: deviceOsVersion.trim(),
+			browser: browser.trim() || DEFAULT_DEVICE_INFO_TEST_VALUES.browser,
+			browserVersion: browserVersion.trim(),
+		};
+	}, [deviceType, deviceOs, deviceOsVersion, browser, browserVersion]);
+
+	const handleSetDeviceInfo = () => {
+		setDeviceInfoResult(null);
+		try {
+			const values = buildDeviceValuesFromFields();
+			saveDeviceInfoTestValues(values);
+			setDeviceInfoResult(
+				`Device info set: type=${values.deviceType}, OS=${values.deviceOs}, browser=${values.browser}. Sent on next identifyUser / startSession / trackEvent.`,
+			);
+		} catch (e) {
+			setDeviceInfoResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+		}
+	};
+
+	const handleResetDeviceInfoDefaults = () => {
+		setDeviceType(DEFAULT_DEVICE_INFO_TEST_VALUES.deviceType);
+		setDeviceOs(DEFAULT_DEVICE_INFO_TEST_VALUES.deviceOs);
+		setDeviceOsVersion(DEFAULT_DEVICE_INFO_TEST_VALUES.deviceOsVersion);
+		setBrowser(DEFAULT_DEVICE_INFO_TEST_VALUES.browser);
+		setBrowserVersion(DEFAULT_DEVICE_INFO_TEST_VALUES.browserVersion);
+		saveDeviceInfoTestValues(DEFAULT_DEVICE_INFO_TEST_VALUES);
+		setDeviceInfoResult("Reset to test defaults (desktop / Windows / Chrome).");
+	};
+
+	const handlePushDeviceInfo = () => {
+		setDeviceInfoResult(null);
+		try {
+			saveDeviceInfoTestValues(buildDeviceValuesFromFields());
+			if (identifyUserName.trim()) {
+				void handleIdentify();
+				setDeviceInfoResult("Device info saved and identify user called — check $deviceInfo in the network tab.");
+			} else {
+				_encatch.startSession();
+				setDeviceInfoResult("Device info saved and session started — check $deviceInfo on ping/track requests.");
+			}
+		} catch (e) {
+			setDeviceInfoResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
 		}
 	};
 
@@ -628,6 +721,7 @@ export default function EncatchTestPage() {
 			setIdentifySetDisplayName("Test User");
 			setTrackEventName("test_event");
 			setScreenName("/dashboard/encatch-test");
+			setTheme("system");
 			setLanguage("en");
 			setCountry("US");
 			setFeedbackFormId1("");
@@ -996,7 +1090,7 @@ export default function EncatchTestPage() {
 											disabled={!identifySecretKey.trim()}
 											className="rounded"
 										/>
-										Include timestamp (ms) in signature
+										Include timestamp (ms) in signature — required when your key has a session timeout configured
 									</label>
 								</div>
 							)}
@@ -1014,16 +1108,29 @@ export default function EncatchTestPage() {
 				<Section title="setTheme, setLocale, setCountry" description="Theme for Encatch UI; locale and country for form content and localization.">
 					<div className="flex flex-col gap-3">
 						<div className="flex flex-wrap items-center gap-2">
-							<Label className="text-muted-foreground text-xs shrink-0">Theme</Label>
-							<Button variant="outline" size="sm" onClick={() => handleSetTheme("light")}>
-								Light
+							<Label htmlFor="encatch-theme" className="text-muted-foreground text-xs shrink-0">
+								Theme
+							</Label>
+							<Select value={theme} onValueChange={(value) => setTheme(parseStoredTheme(value))}>
+								<SelectTrigger id="encatch-theme" className="w-[130px]">
+									<SelectValue placeholder="Select theme" />
+								</SelectTrigger>
+								<SelectContent>
+									{ENCATCH_THEME_OPTIONS.map((opt) => (
+										<SelectItem key={opt} value={opt}>
+											{opt.charAt(0).toUpperCase() + opt.slice(1)}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<Button size="sm" onClick={handleSetTheme}>
+								Set
 							</Button>
-							<Button variant="outline" size="sm" onClick={() => handleSetTheme("dark")}>
-								Dark
-							</Button>
-							<Button variant="outline" size="sm" onClick={() => handleSetTheme("system")}>
-								System
-							</Button>
+							{themeResult && (
+								<Text variant="caption" className="text-muted-foreground">
+									{themeResult}
+								</Text>
+							)}
 						</div>
 						<div className="flex flex-wrap items-center gap-2">
 							<Label htmlFor="language" className="text-muted-foreground text-xs shrink-0">
@@ -1053,6 +1160,95 @@ export default function EncatchTestPage() {
 								</Text>
 							)}
 						</div>
+					</div>
+				</Section>
+
+				<Section
+					title="Device info: type, OS, browser"
+					description="Test environment only — pick device type, OS, and browser manually (not auto-detected). Click Set device info, then identify or start session. Values are injected into $deviceInfo on Encatch API requests by the slash-admin test harness."
+				>
+					<div className="flex flex-col gap-4">
+						<div className="grid gap-3 sm:grid-cols-2">
+							<div className="flex flex-col gap-1.5">
+								<Label htmlFor="test-device-type" className="text-xs">
+									Device type
+								</Label>
+								<Select value={deviceType} onValueChange={setDeviceType}>
+									<SelectTrigger id="test-device-type">
+										<SelectValue placeholder="Select device type" />
+									</SelectTrigger>
+									<SelectContent>
+										{DEVICE_TYPE_OPTIONS.map((opt) => (
+											<SelectItem key={opt} value={opt}>
+												{opt}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="flex flex-col gap-1.5">
+								<Label htmlFor="test-device-os" className="text-xs">
+									Device OS
+								</Label>
+								<Select value={deviceOs} onValueChange={setDeviceOs}>
+									<SelectTrigger id="test-device-os">
+										<SelectValue placeholder="Select device OS" />
+									</SelectTrigger>
+									<SelectContent>
+										{DEVICE_OS_OPTIONS.map((opt) => (
+											<SelectItem key={opt} value={opt}>
+												{opt}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="flex flex-col gap-1.5">
+								<Label htmlFor="test-device-os-version" className="text-xs">
+									Device OS version
+								</Label>
+								<Input id="test-device-os-version" value={deviceOsVersion} onChange={(e) => setDeviceOsVersion(e.target.value)} placeholder="e.g. 11" />
+							</div>
+							<div className="flex flex-col gap-1.5">
+								<Label htmlFor="test-browser" className="text-xs">
+									Browser
+								</Label>
+								<Select value={browser} onValueChange={setBrowser}>
+									<SelectTrigger id="test-browser">
+										<SelectValue placeholder="Select browser" />
+									</SelectTrigger>
+									<SelectContent>
+										{BROWSER_OPTIONS.map((opt) => (
+											<SelectItem key={opt} value={opt}>
+												{opt}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="flex flex-col gap-1.5 sm:col-span-2">
+								<Label htmlFor="test-browser-version" className="text-xs">
+									Browser version
+								</Label>
+								<Input id="test-browser-version" value={browserVersion} onChange={(e) => setBrowserVersion(e.target.value)} placeholder="e.g. 124.0" />
+							</div>
+						</div>
+						<div className="flex flex-wrap gap-2">
+							<Button type="button" size="sm" onClick={handleSetDeviceInfo}>
+								Set device info
+							</Button>
+							<Button type="button" variant="outline" size="sm" onClick={handlePushDeviceInfo}>
+								Set &amp; send (identify / session)
+							</Button>
+							<Button type="button" variant="ghost" size="sm" onClick={handleResetDeviceInfoDefaults}>
+								Reset defaults
+							</Button>
+						</div>
+						{deviceInfoResult && (
+							<Text variant="caption" className="text-muted-foreground">
+								{deviceInfoResult}
+							</Text>
+						)}
 					</div>
 				</Section>
 

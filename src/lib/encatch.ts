@@ -26,6 +26,7 @@ export const ENCATCH_TEST_STORAGE_KEYS = {
 	SCREEN_NAME: "encatch_test_screen_name",
 	LANGUAGE: "encatch_test_language",
 	COUNTRY: "encatch_test_country",
+	THEME: "encatch_test_theme",
 	FEEDBACK_FORM_ID_1: "encatch_test_feedback_form_id_1",
 	FEEDBACK_FORM_ID_2: "encatch_test_feedback_form_id_2",
 	RESET_MODE_1: "encatch_test_reset_mode_1",

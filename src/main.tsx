@@ -1,3 +1,4 @@
+import "./lib/encatch-test-patch";
 import "./global.css";
 import "./theme/theme.css";
 import "./locales/i18n";
