@@ -33,7 +33,11 @@ export const ENCATCH_TEST_STORAGE_KEYS = {
 	RESET_MODE_2: "encatch_test_reset_mode_2",
 	/** JSON array of { key, value } for showForm context (encatch-test page). */
 	SHOW_FORM_CONTEXT_ROWS: "encatch_test_show_form_context_rows",
+	/** JSON array of { key: questionId, value } for addToResponse (encatch-test page). */
+	PREFILL_ROWS: "encatch_test_prefill_rows",
+	/** @deprecated Migrated into PREFILL_ROWS on load */
 	PREFILL_QUESTION_ID: "encatch_test_prefill_question_id",
+	/** @deprecated Migrated into PREFILL_ROWS on load */
 	PREFILL_VALUE: "encatch_test_prefill_value",
 } as const;
 

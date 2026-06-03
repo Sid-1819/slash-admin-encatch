@@ -61,8 +61,8 @@ Manual, user-perspective test scenarios for the Encatch test page (`/dashboard/e
 
 | Step | Action                                                                                         | Expected result                          |
 | ---- | ---------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| 1    | In **addToResponse**, set **Question ID** to a real question ID from your form (e.g. `email`). | —                                        |
-| 2    | Set **Value** (e.g. `prefilled@example.com`). Click **Add to response**.                       | Success message.                         |
+| 1    | In **addToResponse**, add one or more rows: **Question ID** (e.g. `email`) and **Value** per row. Use **Add row** for multiple questions. | —                                        |
+| 2    | Click **Add to response** (applies all rows with a question ID).                               | Success message listing each prefill.    |
 | 3    | Click **Open form**.                                                                           | Form opens.                              |
 | 4    | Check the matching question in the form.                                                       | That question shows the prefilled value. |
 
@@ -187,7 +187,7 @@ Manual, user-perspective test scenarios for the Encatch test page (`/dashboard/e
 | Step | Action                                                                                                    | Expected result                                                      |
 | ---- | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | 1    | Click **Open form** (form visible).                                                                       | Form is open.                                                        |
-| 2    | In **addToResponse**, set **Question ID** (exists in open form) and **Value**. Click **Add to response**. | Success message.                                                     |
+| 2    | In **addToResponse**, set **Question ID** (exists in open form) and **Value** on one or more rows. Click **Add to response**. | Success message.                                                     |
 | 3    | Check the open form.                                                                                      | That question shows the new value (if engine supports live prefill). |
 
 

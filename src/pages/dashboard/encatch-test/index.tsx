@@ -139,22 +139,44 @@ function parseEncatchPrefillValue(raw: string): unknown {
 	}
 }
 
+function parseKeyValueRowsFromJson(raw: string): KeyValueRow[] {
+	if (!raw.trim()) return [];
+	const arr = JSON.parse(raw) as unknown;
+	if (!Array.isArray(arr)) return [];
+	return arr
+		.filter((x): x is Record<string, unknown> => x !== null && typeof x === "object")
+		.map((x) => ({
+			key: typeof x.key === "string" ? x.key : "",
+			value: typeof x.value === "string" ? x.value : "",
+			id: crypto.randomUUID(),
+		}));
+}
+
 function loadShowFormContextRowsFromStorage(): KeyValueRow[] {
 	try {
-		const raw = getTestStored(ENCATCH_TEST_STORAGE_KEYS.SHOW_FORM_CONTEXT_ROWS);
-		if (!raw.trim()) return [];
-		const arr = JSON.parse(raw) as unknown;
-		if (!Array.isArray(arr)) return [];
-		return arr
-			.filter((x): x is Record<string, unknown> => x !== null && typeof x === "object")
-			.map((x) => ({
-				key: typeof x.key === "string" ? x.key : "",
-				value: typeof x.value === "string" ? x.value : "",
-				id: crypto.randomUUID(),
-			}));
+		return parseKeyValueRowsFromJson(getTestStored(ENCATCH_TEST_STORAGE_KEYS.SHOW_FORM_CONTEXT_ROWS));
 	} catch {
 		return [];
 	}
+}
+
+function newPrefillRow(key = "", value = ""): KeyValueRow {
+	return { key, value, id: crypto.randomUUID() };
+}
+
+function loadPrefillRowsFromStorage(): KeyValueRow[] {
+	try {
+		const fromRows = parseKeyValueRowsFromJson(getTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_ROWS));
+		if (fromRows.length > 0) return fromRows;
+		const legacyId = getTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_QUESTION_ID);
+		const legacyValue = getTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_VALUE);
+		if (legacyId.trim() || legacyValue.trim()) {
+			return [newPrefillRow(legacyId, legacyValue)];
+		}
+	} catch {
+		// fall through
+	}
+	return [newPrefillRow()];
 }
 
 /** Build showForm context: only string | number | boolean (SDK ContextValue minus Date). */
@@ -222,8 +244,7 @@ export default function EncatchTestPage() {
 	const [showFormResult, setShowFormResult] = useState<string | null>(null);
 
 	// addToResponse
-	const [prefillQuestionId, setPrefillQuestionId] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_QUESTION_ID));
-	const [prefillValue, setPrefillValue] = useState(() => getTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_VALUE));
+	const [prefillRows, setPrefillRows] = useState<KeyValueRow[]>(() => loadPrefillRowsFromStorage());
 	const [addToResponseResult, setAddToResponseResult] = useState<string | null>(null);
 
 	// Device info — manual test values only (no UA auto-detect)
@@ -306,8 +327,7 @@ export default function EncatchTestPage() {
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.RESET_MODE_1, resetMode1);
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.RESET_MODE_2, resetMode2);
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.SHOW_FORM_CONTEXT_ROWS, JSON.stringify(showFormContextRows.map(({ key, value }) => ({ key, value }))));
-		setTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_QUESTION_ID, prefillQuestionId);
-		setTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_VALUE, prefillValue);
+		setTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_ROWS, JSON.stringify(prefillRows.map(({ key, value }) => ({ key, value }))));
 	}, [
 		identifyUserName,
 		identifySetEmail,
@@ -322,8 +342,7 @@ export default function EncatchTestPage() {
 		resetMode1,
 		resetMode2,
 		showFormContextRows,
-		prefillQuestionId,
-		prefillValue,
+		prefillRows,
 	]);
 
 	// Build traits object from simple fields (for preview and submit)
@@ -447,6 +466,16 @@ export default function EncatchTestPage() {
 	}
 	function removeShowFormContextRow(index: number) {
 		setShowFormContextRows((prev) => prev.filter((_, i) => i !== index));
+	}
+
+	function addPrefillRow() {
+		setPrefillRows((prev) => [...prev, newPrefillRow()]);
+	}
+	function updatePrefillRow(index: number, field: "key" | "value", val: string) {
+		setPrefillRows((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: val } : p)));
+	}
+	function removePrefillRow(index: number) {
+		setPrefillRows((prev) => (prev.length <= 1 ? [newPrefillRow()] : prev.filter((_, i) => i !== index)));
 	}
 
 	const handleSetTheme = () => {
@@ -639,18 +668,29 @@ export default function EncatchTestPage() {
 
 	const handleAddToResponse = () => {
 		setAddToResponseResult(null);
-		try {
-			const qId = prefillQuestionId.trim();
-			if (!qId) {
-				setAddToResponseResult("Error: question ID is required");
-				return;
-			}
-			const value = parseEncatchPrefillValue(prefillValue);
-			_encatch.addToResponse(qId, value);
-			setAddToResponseResult(`Prefill set: ${qId} = ${JSON.stringify(value)} (${typeof value})`);
-		} catch (e) {
-			setAddToResponseResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+		const validRows = prefillRows.filter((r) => r.key.trim());
+		if (validRows.length === 0) {
+			setAddToResponseResult("Error: add at least one question ID");
+			return;
 		}
+		const applied: string[] = [];
+		const errors: string[] = [];
+		for (const row of validRows) {
+			const qId = row.key.trim();
+			try {
+				const value = parseEncatchPrefillValue(row.value);
+				_encatch.addToResponse(qId, value);
+				applied.push(`${qId} = ${JSON.stringify(value)} (${typeof value})`);
+			} catch (e) {
+				errors.push(`${qId}: ${e instanceof Error ? e.message : String(e)}`);
+			}
+		}
+		if (errors.length > 0) {
+			const appliedMsg = applied.length > 0 ? ` Applied: ${applied.join("; ")}` : "";
+			setAddToResponseResult(`Error: ${errors.join("; ")}.${appliedMsg}`);
+			return;
+		}
+		setAddToResponseResult(`Prefill set (${applied.length}): ${applied.join("; ")}`);
 	};
 
 	const handleRandomUser = () => {
@@ -728,8 +768,8 @@ export default function EncatchTestPage() {
 			setFeedbackFormId2("");
 			setResetMode1("always");
 			setResetMode2("always");
-			setPrefillQuestionId("");
-			setPrefillValue("");
+			setShowFormContextRows([]);
+			setPrefillRows([newPrefillRow()]);
 			setSavedApiKeys(getApiKeysList());
 			toast.success("Cleared local/session/IndexedDB; API key, host, and saved keys kept.");
 		} catch {
@@ -1392,19 +1432,42 @@ export default function EncatchTestPage() {
 
 				<Section
 					title="addToResponse"
-					description="Prefill a form question by ID. Stored for current and future showForm(); also sent to visible iframes. Use JSON literals for typed values (e.g. 42, true, null, [&quot;a&quot;,&quot;b&quot;]); plain text stays a string."
+					description="Prefill one or more form questions by ID. Add rows, then click Add to response to apply all. Stored for current and future showForm(); also sent to visible iframes. Use JSON literals for typed values (e.g. 42, true, null, [&quot;a&quot;,&quot;b&quot;]); plain text stays a string."
 				>
-					<div className="flex flex-col gap-2">
-						<Label htmlFor="prefill-question-id">Question ID</Label>
-						<Input
-							id="prefill-question-id"
-							value={prefillQuestionId}
-							onChange={(e) => setPrefillQuestionId(e.target.value)}
-							placeholder="e.g. email or question slug"
-						/>
-						<Label htmlFor="prefill-value">Value</Label>
-						<Input id="prefill-value" value={prefillValue} onChange={(e) => setPrefillValue(e.target.value)} placeholder='Text or JSON: 42, true, "hello"' />
-						<Button onClick={handleAddToResponse}>Add to response</Button>
+					<div className="flex flex-col gap-3">
+						<div className="flex flex-col gap-2 rounded-lg border border-border/50 bg-muted/20 p-3">
+							<div className="flex items-center justify-between gap-2">
+								<Label className="text-xs font-medium">Question prefill rows</Label>
+								<Button type="button" variant="outline" size="sm" onClick={addPrefillRow}>
+									Add row
+								</Button>
+							</div>
+							<Text variant="caption" className="text-muted-foreground">
+								Rows without a question ID are skipped. Plain text is a string; use JSON for numbers, booleans, arrays, and objects.
+							</Text>
+							{prefillRows.map((row, i) => (
+								<div key={row.id} className="flex flex-wrap gap-2">
+									<Input
+										placeholder="Question ID (e.g. email)"
+										value={row.key}
+										onChange={(e) => updatePrefillRow(i, "key", e.target.value)}
+										className="font-mono text-sm min-w-[120px] flex-1"
+									/>
+									<Input
+										placeholder='Value or JSON: 42, true, "hello"'
+										value={row.value}
+										onChange={(e) => updatePrefillRow(i, "value", e.target.value)}
+										className="font-mono text-sm min-w-[140px] flex-2"
+									/>
+									<Button type="button" variant="ghost" size="sm" onClick={() => removePrefillRow(i)}>
+										Remove
+									</Button>
+								</div>
+							))}
+						</div>
+						<Button onClick={handleAddToResponse} disabled={!prefillRows.some((r) => r.key.trim())}>
+							Add to response
+						</Button>
 						{addToResponseResult && (
 							<Text variant="caption" className="text-muted-foreground">
 								{addToResponseResult}
