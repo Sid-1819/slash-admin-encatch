@@ -10,6 +10,8 @@ import type { UserTraits } from "@encatch/web-sdk";
 /** localStorage keys for Encatch config (set on login screen). */
 export const ENCATCH_STORAGE_KEYS = {
 	API_KEY: "encatch_api_key",
+	/** JSON map of host URL → API key (dev / uat / prod). */
+	API_KEYS_BY_HOST: "encatch_api_keys_by_host",
 	HOST: "encatch_host",
 	FEEDBACK_FORM_ID_1: "encatch_feedback_form_id_1",
 	FEEDBACK_FORM_ID_2: "encatch_feedback_form_id_2",
@@ -33,7 +35,7 @@ export const ENCATCH_TEST_STORAGE_KEYS = {
 	RESET_MODE_2: "encatch_test_reset_mode_2",
 	/** JSON array of { key, value } for showForm context (encatch-test page). */
 	SHOW_FORM_CONTEXT_ROWS: "encatch_test_show_form_context_rows",
-	/** JSON array of { key: questionId, value } for addToResponse (encatch-test page). */
+	/** JSON array of { questionId, questionType, value } for addToResponse (encatch-test page). */
 	PREFILL_ROWS: "encatch_test_prefill_rows",
 	/** @deprecated Migrated into PREFILL_ROWS on load */
 	PREFILL_QUESTION_ID: "encatch_test_prefill_question_id",
@@ -60,9 +62,106 @@ function getStored(key: string): string {
 	}
 }
 
-/** API key from localStorage (set on login screen). */
-export function getEncatchApiKey(): string {
+function setStored(key: string, value: string): void {
+	if (typeof window === "undefined" || typeof localStorage === "undefined") return;
+	try {
+		localStorage.setItem(key, value);
+	} catch {
+		// ignore
+	}
+}
+
+function getApiKeysByHostMap(): Record<string, string> {
+	try {
+		const raw = getStored(ENCATCH_STORAGE_KEYS.API_KEYS_BY_HOST);
+		if (!raw) return {};
+		const parsed = JSON.parse(raw) as unknown;
+		if (!parsed || typeof parsed !== "object") return {};
+		const out: Record<string, string> = {};
+		for (const [host, value] of Object.entries(parsed as Record<string, unknown>)) {
+			if (typeof value === "string") out[host] = value;
+		}
+		return out;
+	} catch {
+		return {};
+	}
+}
+
+/** One saved API key tied to a host environment. */
+export type EncatchSavedApiKeyEntry = {
+	host: string;
+	hostLabel: string;
+	apiKey: string;
+};
+
+/** Saved API keys grouped by host (dev / uat / prod), in dropdown order. */
+export function getEncatchSavedApiKeyEntries(): EncatchSavedApiKeyEntry[] {
+	const map = { ...getApiKeysByHostMap() };
+	const legacyKey = getStored(ENCATCH_STORAGE_KEYS.API_KEY).trim();
+	const legacyHost = getStored(ENCATCH_STORAGE_KEYS.HOST).trim() || ENCATCH_DEFAULT_HOST;
+	if (legacyKey && !map[legacyHost]?.trim()) {
+		map[legacyHost] = legacyKey;
+	}
+	const entries: EncatchSavedApiKeyEntry[] = [];
+	for (const opt of ENCATCH_HOST_OPTIONS) {
+		const apiKey = map[opt.value]?.trim();
+		if (apiKey) {
+			entries.push({ host: opt.value, hostLabel: opt.label, apiKey });
+		}
+	}
+	for (const [host, apiKey] of Object.entries(map)) {
+		const trimmed = apiKey.trim();
+		if (!trimmed) continue;
+		if (ENCATCH_HOST_OPTIONS.some((opt) => opt.value === host)) continue;
+		entries.push({ host, hostLabel: getEncatchHostLabel(host), apiKey: trimmed });
+	}
+	return entries;
+}
+
+/** Short preview for dropdown labels (keeps prefix + suffix). */
+export function formatEncatchApiKeyPreview(apiKey: string): string {
+	const trimmed = apiKey.trim();
+	if (trimmed.length <= 24) return trimmed;
+	return `${trimmed.slice(0, 14)}…${trimmed.slice(-8)}`;
+}
+
+/** Single-line label for saved host + API key dropdown rows. */
+export function formatEncatchSavedApiKeyLabel(entry: EncatchSavedApiKeyEntry): string {
+	return `${entry.hostLabel} · ${formatEncatchApiKeyPreview(entry.apiKey)}`;
+}
+
+/** Human-readable host label (e.g. app.uat.encatch.com). */
+export function getEncatchHostLabel(host?: string): string {
+	const h = (host ?? getEncatchHost()).trim();
+	return ENCATCH_HOST_OPTIONS.find((opt) => opt.value === h)?.label ?? h;
+}
+
+/** API key saved for a specific host (dev / uat / prod). Falls back to legacy single key. */
+export function getEncatchApiKeyForHost(host: string): string {
+	const trimmedHost = host.trim();
+	const fromMap = getApiKeysByHostMap()[trimmedHost]?.trim();
+	if (fromMap) return fromMap;
 	return getStored(ENCATCH_STORAGE_KEYS.API_KEY).trim();
+}
+
+/** Persist API key for a host and sync active key + host for initEncatch(). */
+export function setEncatchApiKeyForHost(host: string, apiKey: string): void {
+	const trimmedHost = host.trim();
+	const trimmedKey = apiKey.trim();
+	const map = getApiKeysByHostMap();
+	if (trimmedKey) {
+		map[trimmedHost] = trimmedKey;
+	} else {
+		delete map[trimmedHost];
+	}
+	setStored(ENCATCH_STORAGE_KEYS.API_KEYS_BY_HOST, JSON.stringify(map));
+	setStored(ENCATCH_STORAGE_KEYS.API_KEY, trimmedKey);
+	setStored(ENCATCH_STORAGE_KEYS.HOST, trimmedHost);
+}
+
+/** API key from localStorage for the currently selected host. */
+export function getEncatchApiKey(): string {
+	return getEncatchApiKeyForHost(getEncatchHost());
 }
 
 /** Host (e.g. https://app.dev.encatch.com) from localStorage. Empty means use default. */
@@ -70,6 +169,19 @@ export function getEncatchHost(): string {
 	const stored = getStored(ENCATCH_STORAGE_KEYS.HOST).trim();
 	return stored || ENCATCH_DEFAULT_HOST;
 }
+
+/** Origin passed to _encatch.init (respects dev proxy when host is unset). */
+export function getEncatchInitOrigin(): string {
+	if (typeof window === "undefined") return ENCATCH_DEFAULT_HOST;
+	const storedHost = getStored(ENCATCH_STORAGE_KEYS.HOST).trim();
+	if (storedHost) return storedHost;
+	return import.meta.env.PROD ? ENCATCH_DEFAULT_HOST : window.location.origin;
+}
+
+export type InitEncatchResult =
+	| { status: "initialized"; host: string; hostLabel: string }
+	| { status: "already_initialized"; host: string; hostLabel: string }
+	| { status: "skipped"; reason: "no_api_key" | "ssr"; message: string };
 
 /** Default feedback form ID 1 from localStorage. Use when opening feedback. */
 export function getEncatchFeedbackFormId1(): string {
@@ -146,22 +258,27 @@ export function mapTraitsToSdk(traits: Record<string, unknown> | undefined): Use
 
 /**
  * Initialize the Encatch SDK. Call once when the app mounts (browser only).
- * Uses API key from localStorage (set on login screen).
+ * Uses API key from localStorage for the selected host.
  */
-export function initEncatch(): void {
-	if (typeof window === "undefined") return;
-	if (_encatch._initialized) return;
+export function initEncatch(): InitEncatchResult {
+	if (typeof window === "undefined") {
+		return { status: "skipped", reason: "ssr", message: "Not in browser." };
+	}
+	const encatchOrigin = getEncatchInitOrigin();
+	const hostLabel = getEncatchHostLabel(encatchOrigin);
+	if (_encatch._initialized) {
+		return { status: "already_initialized", host: encatchOrigin, hostLabel };
+	}
 	const apiKey = getEncatchApiKey();
 	if (!apiKey) {
-		console.warn("[Encatch] API key is not set. Set it on the login screen to enable Encatch.");
-		return;
+		const message = `[Encatch] API key is not set for ${hostLabel}. Set it in Encatch config.`;
+		console.warn(message);
+		return { status: "skipped", reason: "no_api_key", message };
 	}
-	const isProd = import.meta.env.PROD;
-	const storedHost = getStored(ENCATCH_STORAGE_KEYS.HOST).trim();
-	const encatchOrigin = storedHost || (isProd ? ENCATCH_DEFAULT_HOST : window.location.origin);
 	_encatch.init(apiKey, {
 		webHost: encatchOrigin,
 		apiBaseUrl: encatchOrigin,
 		theme: "system",
 	});
+	return { status: "initialized", host: encatchOrigin, hostLabel };
 }
