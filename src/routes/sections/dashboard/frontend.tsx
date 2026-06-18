@@ -6,6 +6,18 @@ export const frontendDashboardRoutes: RouteObject[] = [
 	{ path: "workbench", element: Component("/pages/dashboard/workbench") },
 	{ path: "analysis", element: Component("/pages/dashboard/analysis") },
 	{ path: "encatch-test", element: Component("/pages/dashboard/encatch-test") },
+	{
+		path: "encatch-inline-test",
+		children: [
+			{ index: true, element: Component("/pages/dashboard/encatch-inline-test") },
+			{ path: "modal", element: Component("/pages/dashboard/encatch-inline-test/scenarios/modal") },
+			{ path: "unbound", element: Component("/pages/dashboard/encatch-inline-test/scenarios/unbound") },
+			{ path: "bound-match", element: Component("/pages/dashboard/encatch-inline-test/scenarios/bound-match") },
+			{ path: "bound-mismatch", element: Component("/pages/dashboard/encatch-inline-test/scenarios/bound-mismatch") },
+			{ path: "selector-slot", element: Component("/pages/dashboard/encatch-inline-test/scenarios/selector-slot") },
+			{ path: "selector-fallback", element: Component("/pages/dashboard/encatch-inline-test/scenarios/selector-fallback") },
+		],
+	},
 	{ path: "encatch-instructions", element: Component("/pages/dashboard/encatch-instructions") },
 	{ path: "encatch-response-decoder", element: Component("/pages/dashboard/encatch-response-decoder") },
 	{ path: "refiner-test", element: Component("/pages/dashboard/refiner-test") },

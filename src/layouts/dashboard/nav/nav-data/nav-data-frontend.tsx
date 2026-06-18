@@ -22,6 +22,41 @@ export const frontendNavData: NavProps["data"] = [
 				icon: <Icon icon="solar:bug-minimalistic-bold-duotone" size="24" />,
 			},
 			{
+				title: "sys.nav.encatch_inline_test",
+				path: "/encatch-inline-test",
+				icon: <Icon icon="solar:sidebar-minimalistic-bold-duotone" size="24" />,
+				children: [
+					{
+						title: "sys.nav.encatch_inline_test.scenarios",
+						path: "/encatch-inline-test",
+					},
+					{
+						title: "sys.nav.encatch_inline_test.modal",
+						path: "/encatch-inline-test/modal",
+					},
+					{
+						title: "sys.nav.encatch_inline_test.unbound",
+						path: "/encatch-inline-test/unbound",
+					},
+					{
+						title: "sys.nav.encatch_inline_test.bound_match",
+						path: "/encatch-inline-test/bound-match",
+					},
+					{
+						title: "sys.nav.encatch_inline_test.bound_mismatch",
+						path: "/encatch-inline-test/bound-mismatch",
+					},
+					{
+						title: "sys.nav.encatch_inline_test.selector_slot",
+						path: "/encatch-inline-test/selector-slot",
+					},
+					{
+						title: "sys.nav.encatch_inline_test.selector_fallback",
+						path: "/encatch-inline-test/selector-fallback",
+					},
+				],
+			},
+			{
 				title: "sys.nav.encatch_instructions",
 				path: "/encatch-instructions",
 				icon: <Icon icon="solar:document-text-bold-duotone" size="24" />,
