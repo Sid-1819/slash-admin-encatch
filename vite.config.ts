@@ -5,14 +5,17 @@ import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig, loadEnv } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-const ENCATCH_PROXY_DEFAULT = "https://app.uat.encatch.com";
+const ENCATCH_PROXY_API_DEFAULT = "https://api.dev.encatch.com";
+const ENCATCH_PROXY_WEB_DEFAULT = "https://form.dev.encatch.com";
 
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), "");
 	const base = env.VITE_APP_PUBLIC_PATH || "/";
 	const isProduction = mode === "production";
-	/** Encatch proxy target. Set ENCATCH_PROXY_TARGET in .env to match the host configured on the login panel. */
-	const encatchTarget = env.ENCATCH_PROXY_TARGET || ENCATCH_PROXY_DEFAULT;
+	/** Encatch API proxy target (api.dev / api.uat / api.encatch). */
+	const encatchApiTarget = env.ENCATCH_PROXY_API_TARGET || ENCATCH_PROXY_API_DEFAULT;
+	/** Encatch form/iframe proxy target (form.dev / form-uat / form.encatch). */
+	const encatchWebTarget = env.ENCATCH_PROXY_WEB_TARGET || ENCATCH_PROXY_WEB_DEFAULT;
 
 	return {
 		base,
@@ -44,24 +47,23 @@ export default defineConfig(({ mode }) => {
 					rewrite: (path) => path.replace(/^\/api/, ""),
 					secure: false,
 				},
-				// Encatch – proxy target from ENCATCH_PROXY_TARGET (.env), default app.dev.encatch.com. Match the host set on the login panel.
-				// 1) API: so track-event etc. go through proxy (avoids CORS on x-device-id)
+				// Encatch – split API vs form hosts (api.dev.encatch.com / form.dev.encatch.com).
+				// Set ENCATCH_PROXY_API_TARGET and ENCATCH_PROXY_WEB_TARGET in .env to match Encatch Test config.
+				// 1) API: track-event, ping, show-form, etc.
 				"/engage-product/encatch/api": {
-					target: encatchTarget,
+					target: encatchApiTarget,
 					changeOrigin: true,
 					secure: true,
 				},
-				// 2) Form/iframe: so iframe URL stays on origin and gets proxied (avoids 404)
+				// 2) Form/iframe assets (non-API engage-product paths)
 				"/engage-product/encatch": {
-					target: encatchTarget,
+					target: encatchWebTarget,
 					changeOrigin: true,
 					secure: true,
 				},
-				// 3) SDK script: so script loads from origin (avoids CORS on encatch.js) – must be before /s
-				// "/s/sdk/v1": { target: encatchTarget, changeOrigin: true, secure: true },
-				// 4) Form iframe: SDK loads form at /s/web-sdk-form?formId=...
+				// 3) Form iframe: SDK loads form at /s/web-sdk-form?formId=...
 				"/s/": {
-					target: encatchTarget,
+					target: encatchWebTarget,
 					changeOrigin: true,
 					secure: true,
 				},

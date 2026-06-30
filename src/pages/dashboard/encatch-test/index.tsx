@@ -11,7 +11,7 @@ import {
 	getEncatchFeedbackFormId1,
 	getEncatchFeedbackFormId2,
 	getEncatchHostLabel,
-	getEncatchInitOrigin,
+	getEncatchInitHosts,
 	getEncatchSavedApiKeyEntries,
 	encatchPauseSession,
 	encatchResumeSession,
@@ -304,8 +304,8 @@ export default function EncatchTestPage() {
 			setEncatchApiKey(getEncatchApiKeyForHost(host));
 			setSavedApiKeyEntries(getEncatchSavedApiKeyEntries());
 			if (_encatch._initialized) {
-				const initHost = getEncatchInitOrigin();
-				setInitResult(`SDK initialized with host ${getEncatchHostLabel(initHost)} (${initHost}).`);
+				const { webHost, apiBaseUrl } = getEncatchInitHosts();
+				setInitResult(`SDK initialized — form: ${getEncatchHostLabel(webHost)} (${webHost}), API: ${apiBaseUrl}.`);
 			}
 		} catch {
 			// ignore
@@ -730,10 +730,12 @@ export default function EncatchTestPage() {
 			refreshSavedApiKeyEntries();
 			const result = initEncatch();
 			if (result.status === "initialized") {
-				setInitResult(`SDK initialized with host ${result.hostLabel} (${result.host}).`);
+				setInitResult(`SDK initialized — form: ${result.hostLabel} (${result.host}), API: ${result.apiBaseUrl}.`);
 				toast.success(`SDK initialized with ${result.hostLabel}.`);
 			} else if (result.status === "already_initialized") {
-				setInitResult(`SDK already initialized with host ${result.hostLabel} (${result.host}). Reload the page to use a new API key or host.`);
+				setInitResult(
+					`SDK already initialized — form: ${result.hostLabel} (${result.host}), API: ${result.apiBaseUrl}. Reload to apply a new API key or host.`,
+				);
 				toast.message(`Already initialized with ${result.hostLabel}.`);
 			} else {
 				setInitResult(result.message);
