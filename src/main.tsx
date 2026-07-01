@@ -27,7 +27,7 @@ if (GLOBAL_CONFIG.routerMode === "backend") {
 }
 
 // init("eng_dev_11eu7yMd66L64yGvaf0KYMKeTgBuYBJ8jVWrjsCruWuwW89bthYLQkdro8YrNlv0boi8NC1gltv3_70f15c73", {
-// 	host: "https://form.dev.encatch.com",
+// 	host: "https://app.dev.encatch.com",
 // });
 
 const router = createBrowserRouter(

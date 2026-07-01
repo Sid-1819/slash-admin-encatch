@@ -43,47 +43,15 @@ export const ENCATCH_TEST_STORAGE_KEYS = {
 	PREFILL_VALUE: "encatch_test_prefill_value",
 } as const;
 
-/** Default Encatch form host when none is configured (UAT). */
-export const ENCATCH_DEFAULT_HOST = "https://form-uat.encatch.com";
+/** Default Encatch host when none is configured (UAT). */
+export const ENCATCH_DEFAULT_HOST = "https://app.uat.encatch.com";
 
-/** Dropdown options for Encatch environment (form webHost + paired apiBaseUrl). */
+/** Dropdown options for Encatch host on the login panel. */
 export const ENCATCH_HOST_OPTIONS = [
-	{
-		value: "https://form.dev.encatch.com",
-		label: "form.dev.encatch.com",
-		webHost: "https://form.dev.encatch.com",
-		apiBaseUrl: "https://api.dev.encatch.com",
-	},
-	{
-		value: "https://form-uat.encatch.com",
-		label: "form-uat.encatch.com",
-		webHost: "https://form-uat.encatch.com",
-		apiBaseUrl: "https://api.uat.encatch.com",
-	},
-	{
-		value: "https://form.encatch.com",
-		label: "form.encatch.com",
-		webHost: "https://form.encatch.com",
-		apiBaseUrl: "https://api.encatch.com",
-	},
+	{ value: "https://app.dev.encatch.com", label: "app.dev.encatch.com" },
+	{ value: "https://app.uat.encatch.com", label: "app.uat.encatch.com" },
+	{ value: "https://app.encatch.com", label: "app.encatch.com" },
 ] as const;
-
-export type EncatchHostOption = (typeof ENCATCH_HOST_OPTIONS)[number];
-
-export type EncatchResolvedHosts = {
-	webHost: string;
-	apiBaseUrl: string;
-};
-
-/** Resolve paired webHost + apiBaseUrl for SDK init (matches encatch-admin-ui / schema encatch-hosts). */
-export function resolveEncatchHosts(webHost?: string): EncatchResolvedHosts {
-	const trimmedWebHost = (webHost ?? "").trim() || ENCATCH_DEFAULT_HOST;
-	const option = ENCATCH_HOST_OPTIONS.find((opt) => opt.value === trimmedWebHost);
-	if (option) {
-		return { webHost: option.webHost, apiBaseUrl: option.apiBaseUrl };
-	}
-	return { webHost: trimmedWebHost, apiBaseUrl: trimmedWebHost };
-}
 
 function getStored(key: string): string {
 	if (typeof window === "undefined" || typeof localStorage === "undefined") return "";
@@ -128,7 +96,12 @@ export type EncatchSavedApiKeyEntry = {
 
 /** Saved API keys grouped by host (dev / uat / prod), in dropdown order. */
 export function getEncatchSavedApiKeyEntries(): EncatchSavedApiKeyEntry[] {
-	const map = getApiKeysByHostMap();
+	const map = { ...getApiKeysByHostMap() };
+	const legacyKey = getStored(ENCATCH_STORAGE_KEYS.API_KEY).trim();
+	const legacyHost = getStored(ENCATCH_STORAGE_KEYS.HOST).trim() || ENCATCH_DEFAULT_HOST;
+	if (legacyKey && !map[legacyHost]?.trim()) {
+		map[legacyHost] = legacyKey;
+	}
 	const entries: EncatchSavedApiKeyEntry[] = [];
 	for (const opt of ENCATCH_HOST_OPTIONS) {
 		const apiKey = map[opt.value]?.trim();
@@ -157,15 +130,18 @@ export function formatEncatchSavedApiKeyLabel(entry: EncatchSavedApiKeyEntry): s
 	return `${entry.hostLabel} · ${formatEncatchApiKeyPreview(entry.apiKey)}`;
 }
 
-/** Human-readable form host label (e.g. form-uat.encatch.com). */
+/** Human-readable host label (e.g. app.uat.encatch.com). */
 export function getEncatchHostLabel(host?: string): string {
 	const h = (host ?? getEncatchHost()).trim();
 	return ENCATCH_HOST_OPTIONS.find((opt) => opt.value === h)?.label ?? h;
 }
 
-/** API key saved for a specific host (dev / uat / prod). */
+/** API key saved for a specific host (dev / uat / prod). Falls back to legacy single key. */
 export function getEncatchApiKeyForHost(host: string): string {
-	return getApiKeysByHostMap()[host.trim()]?.trim() ?? "";
+	const trimmedHost = host.trim();
+	const fromMap = getApiKeysByHostMap()[trimmedHost]?.trim();
+	if (fromMap) return fromMap;
+	return getStored(ENCATCH_STORAGE_KEYS.API_KEY).trim();
 }
 
 /** Persist API key for a host and sync active key + host for initEncatch(). */
@@ -188,40 +164,23 @@ export function getEncatchApiKey(): string {
 	return getEncatchApiKeyForHost(getEncatchHost());
 }
 
-/** Form webHost from localStorage. Empty means use default. */
+/** Host (e.g. https://app.dev.encatch.com) from localStorage. Empty means use default. */
 export function getEncatchHost(): string {
 	const stored = getStored(ENCATCH_STORAGE_KEYS.HOST).trim();
 	return stored || ENCATCH_DEFAULT_HOST;
 }
 
-/** API origin for the selected environment. */
-export function getEncatchApiBaseUrl(): string {
-	return resolveEncatchHosts(getEncatchHost()).apiBaseUrl;
-}
-
-/** Hosts used for SDK init (dev uses same-origin proxy when host is unset). */
-export function getEncatchInitHosts(): EncatchResolvedHosts {
-	if (typeof window === "undefined") {
-		return resolveEncatchHosts(ENCATCH_DEFAULT_HOST);
-	}
-	const storedHost = getStored(ENCATCH_STORAGE_KEYS.HOST).trim();
-	if (storedHost) {
-		return resolveEncatchHosts(storedHost);
-	}
-	if (!import.meta.env.PROD) {
-		return { webHost: window.location.origin, apiBaseUrl: window.location.origin };
-	}
-	return resolveEncatchHosts(ENCATCH_DEFAULT_HOST);
-}
-
-/** Primary init webHost — for status labels on Encatch Test pages. */
+/** Origin passed to _encatch.init (respects dev proxy when host is unset). */
 export function getEncatchInitOrigin(): string {
-	return getEncatchInitHosts().webHost;
+	if (typeof window === "undefined") return ENCATCH_DEFAULT_HOST;
+	const storedHost = getStored(ENCATCH_STORAGE_KEYS.HOST).trim();
+	if (storedHost) return storedHost;
+	return import.meta.env.PROD ? ENCATCH_DEFAULT_HOST : window.location.origin;
 }
 
 export type InitEncatchResult =
-	| { status: "initialized"; host: string; hostLabel: string; apiBaseUrl: string }
-	| { status: "already_initialized"; host: string; hostLabel: string; apiBaseUrl: string }
+	| { status: "initialized"; host: string; hostLabel: string }
+	| { status: "already_initialized"; host: string; hostLabel: string }
 	| { status: "skipped"; reason: "no_api_key" | "ssr"; message: string };
 
 /** Default feedback form ID 1 from localStorage. Use when opening feedback. */
@@ -305,10 +264,10 @@ export function initEncatch(): InitEncatchResult {
 	if (typeof window === "undefined") {
 		return { status: "skipped", reason: "ssr", message: "Not in browser." };
 	}
-	const { webHost, apiBaseUrl } = getEncatchInitHosts();
-	const hostLabel = getEncatchHostLabel(webHost);
+	const encatchOrigin = getEncatchInitOrigin();
+	const hostLabel = getEncatchHostLabel(encatchOrigin);
 	if (_encatch._initialized) {
-		return { status: "already_initialized", host: webHost, hostLabel, apiBaseUrl };
+		return { status: "already_initialized", host: encatchOrigin, hostLabel };
 	}
 	const apiKey = getEncatchApiKey();
 	if (!apiKey) {
@@ -317,9 +276,9 @@ export function initEncatch(): InitEncatchResult {
 		return { status: "skipped", reason: "no_api_key", message };
 	}
 	_encatch.init(apiKey, {
-		webHost,
-		apiBaseUrl,
+		webHost: encatchOrigin,
+		apiBaseUrl: encatchOrigin,
 		theme: "system",
 	});
-	return { status: "initialized", host: webHost, hostLabel, apiBaseUrl };
+	return { status: "initialized", host: encatchOrigin, hostLabel };
 }
