@@ -78,7 +78,7 @@ The app uses `@encatch/web-sdk` and exposes a `window.encatch` adapter in `src/l
 | Encatch provider | `src/components/encatch-provider.tsx` | Calls `initEncatch()` on mount so `window.encatch` is available. |
 | Init & adapter | `src/lib/encatch.ts` | `initEncatch()`, `createEncatchAdapter()`, `ENCATCH_FEEDBACK_FORM_ID`. |
 | Global types | `src/global.d.ts` | `EncatchGlobal` and `Window.encatch` typings. |
-| Vite proxy | `vite.config.ts` | Proxies `/engage-product/encatch/api`, `/engage-product/encatch`, `/s/sdk/v1` to `https://app.dev.encatch.com`. |
+| Vite proxy | `vite.config.ts` | Proxies `/engage-product/encatch/api`, `/engage-product/encatch`, `/s/` to `https://form-uat.encatch.com` (override with `ENCATCH_PROXY_TARGET`). |
 | Env example | `.env.example` | `VITE_ENCATCH_API_KEY`, `VITE_ENCATCH_API_BASE_URL`, `VITE_ENCATCH_FEEDBACK_FORM_ID`. |
 
 ---

@@ -5,7 +5,7 @@
  */
 
 import { _encatch } from "@encatch/web-sdk";
-import type { UserTraits } from "@encatch/web-sdk";
+import type { EncatchConfig, UserTraits } from "@encatch/web-sdk";
 
 /** localStorage keys for Encatch config (set on login screen). */
 export const ENCATCH_STORAGE_KEYS = {
@@ -44,13 +44,13 @@ export const ENCATCH_TEST_STORAGE_KEYS = {
 } as const;
 
 /** Default Encatch host when none is configured (UAT). */
-export const ENCATCH_DEFAULT_HOST = "https://app.uat.encatch.com";
+export const ENCATCH_DEFAULT_HOST = "https://form-uat.encatch.com";
 
 /** Dropdown options for Encatch host on the login panel. */
 export const ENCATCH_HOST_OPTIONS = [
-	{ value: "https://app.dev.encatch.com", label: "app.dev.encatch.com" },
-	{ value: "https://app.uat.encatch.com", label: "app.uat.encatch.com" },
-	{ value: "https://app.encatch.com", label: "app.encatch.com" },
+	{ value: "https://form.dev.encatch.com", label: "form.dev.encatch.com" },
+	{ value: "https://form-uat.encatch.com", label: "form-uat.encatch.com" },
+	{ value: "https://form.encatch.com", label: "form.encatch.com" },
 ] as const;
 
 function getStored(key: string): string {
@@ -130,7 +130,7 @@ export function formatEncatchSavedApiKeyLabel(entry: EncatchSavedApiKeyEntry): s
 	return `${entry.hostLabel} · ${formatEncatchApiKeyPreview(entry.apiKey)}`;
 }
 
-/** Human-readable host label (e.g. app.uat.encatch.com). */
+/** Human-readable host label (e.g. form-uat.encatch.com). */
 export function getEncatchHostLabel(host?: string): string {
 	const h = (host ?? getEncatchHost()).trim();
 	return ENCATCH_HOST_OPTIONS.find((opt) => opt.value === h)?.label ?? h;
@@ -164,7 +164,7 @@ export function getEncatchApiKey(): string {
 	return getEncatchApiKeyForHost(getEncatchHost());
 }
 
-/** Host (e.g. https://app.dev.encatch.com) from localStorage. Empty means use default. */
+/** Host (e.g. https://form.dev.encatch.com) from localStorage. Empty means use default. */
 export function getEncatchHost(): string {
 	const stored = getStored(ENCATCH_STORAGE_KEYS.HOST).trim();
 	return stored || ENCATCH_DEFAULT_HOST;
@@ -176,6 +176,28 @@ export function getEncatchInitOrigin(): string {
 	const storedHost = getStored(ENCATCH_STORAGE_KEYS.HOST).trim();
 	if (storedHost) return storedHost;
 	return import.meta.env.PROD ? ENCATCH_DEFAULT_HOST : window.location.origin;
+}
+
+/** Paired API origins for form.* web hosts (matches schema encatch-hosts). */
+const ENCATCH_FORM_API_BASE_URL: Record<string, string> = {
+	"form.dev.encatch.com": "https://api.dev.encatch.com",
+	"form-uat.encatch.com": "https://api.uat.encatch.com",
+	"form.encatch.com": "https://api.encatch.com",
+};
+
+/**
+ * apiBaseUrl for init(). Form hosts map to api.*; local dev uses the app origin so Vite can proxy.
+ */
+export function getEncatchApiBaseUrl(webHost: string): string | undefined {
+	try {
+		const mapped = ENCATCH_FORM_API_BASE_URL[new URL(webHost).hostname];
+		if (mapped) {
+			return mapped;
+		}
+	} catch {
+		// Invalid URL — fall through to origin override below.
+	}
+	return webHost;
 }
 
 export type InitEncatchResult =
@@ -275,10 +297,14 @@ export function initEncatch(): InitEncatchResult {
 		console.warn(message);
 		return { status: "skipped", reason: "no_api_key", message };
 	}
-	_encatch.init(apiKey, {
+	const encatchConfig: EncatchConfig = {
 		webHost: encatchOrigin,
-		apiBaseUrl: encatchOrigin,
 		theme: "system",
-	});
+	};
+	const apiBaseUrl = getEncatchApiBaseUrl(encatchOrigin);
+	if (apiBaseUrl) {
+		encatchConfig.apiBaseUrl = apiBaseUrl;
+	}
+	_encatch.init(apiKey, encatchConfig);
 	return { status: "initialized", host: encatchOrigin, hostLabel };
 }

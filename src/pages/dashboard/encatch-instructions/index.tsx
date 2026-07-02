@@ -29,13 +29,13 @@ export default function EncatchInstructionsPage() {
 							<strong>Encatch host</strong> – Choose the environment from the dropdown:
 							<ul className="list-disc list-inside mt-1 ml-2 text-muted-foreground">
 								<li>
-									<code>app.dev.encatch.com</code> – development
+									<code>form.dev.encatch.com</code> – development
 								</li>
 								<li>
-									<code>app.uat.encatch.com</code> – UAT (default)
+									<code>form-uat.encatch.com</code> – UAT (default)
 								</li>
 								<li>
-									<code>app.encatch.com</code> – production
+									<code>form.encatch.com</code> – production
 								</li>
 							</ul>
 						</li>

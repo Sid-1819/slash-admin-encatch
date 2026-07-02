@@ -5,7 +5,7 @@ import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig, loadEnv } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-const ENCATCH_PROXY_DEFAULT = "https://app.uat.encatch.com";
+const ENCATCH_PROXY_DEFAULT = "https://form-uat.encatch.com";
 
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), "");
@@ -44,7 +44,7 @@ export default defineConfig(({ mode }) => {
 					rewrite: (path) => path.replace(/^\/api/, ""),
 					secure: false,
 				},
-				// Encatch – proxy target from ENCATCH_PROXY_TARGET (.env), default app.dev.encatch.com. Match the host set on the login panel.
+				// Encatch – proxy target from ENCATCH_PROXY_TARGET (.env), default form-uat.encatch.com. Match the host set on the login panel.
 				// 1) API: so track-event etc. go through proxy (avoids CORS on x-device-id)
 				"/engage-product/encatch/api": {
 					target: encatchTarget,
