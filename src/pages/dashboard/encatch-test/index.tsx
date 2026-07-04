@@ -410,9 +410,13 @@ export default function EncatchTestPage() {
 		setTrackResult(null);
 		try {
 			_encatch.trackEvent(trackEventName.trim() || "unnamed_event");
-			setTrackResult(`Track event fired: ${trackEventName.trim() || "unnamed_event"}`);
+			const msg = `trackEvent fired: ${trackEventName.trim() || "unnamed_event"}`;
+			setTrackResult(msg);
+			toast.success(msg);
 		} catch (e) {
-			setTrackResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+			setTrackResult(msg);
+			toast.error(msg);
 		}
 	};
 
@@ -433,9 +437,13 @@ export default function EncatchTestPage() {
 			}
 			const userName = identifyUserName.trim() || "anonymous";
 			_encatch.identifyUser(userName, mapTraitsToSdk(Object.keys(traits).length ? traits : undefined), Object.keys(options).length > 0 ? options : undefined);
-			setIdentifyResult(`Identify called for: ${userName}`);
+			const msg = `identifyUser called for: ${userName}`;
+			setIdentifyResult(msg);
+			toast.success(msg);
 		} catch (e) {
-			setIdentifyResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+			setIdentifyResult(msg);
+			toast.error(msg);
 		}
 	};
 
@@ -490,9 +498,13 @@ export default function EncatchTestPage() {
 		setThemeResult(null);
 		try {
 			_encatch.setTheme(theme);
-			setThemeResult(`Theme set to: ${theme}`);
+			const msg = `setTheme: ${theme}`;
+			setThemeResult(msg);
+			toast.success(msg);
 		} catch (e) {
-			setThemeResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+			setThemeResult(msg);
+			toast.error(msg);
 		}
 	};
 
@@ -500,9 +512,13 @@ export default function EncatchTestPage() {
 		setLanguageResult(null);
 		try {
 			_encatch.setLocale(language.trim() || "en");
-			setLanguageResult(`Locale set to: ${language.trim() || "en"}`);
+			const msg = `setLocale: ${language.trim() || "en"}`;
+			setLanguageResult(msg);
+			toast.success(msg);
 		} catch (e) {
-			setLanguageResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+			setLanguageResult(msg);
+			toast.error(msg);
 		}
 	};
 
@@ -510,9 +526,13 @@ export default function EncatchTestPage() {
 		setCountryResult(null);
 		try {
 			_encatch.setCountry(country.trim() || "US");
-			setCountryResult(`Country set to: ${country.trim() || "US"}`);
+			const msg = `setCountry: ${country.trim() || "US"}`;
+			setCountryResult(msg);
+			toast.success(msg);
 		} catch (e) {
-			setCountryResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+			setCountryResult(msg);
+			toast.error(msg);
 		}
 	};
 
@@ -520,9 +540,13 @@ export default function EncatchTestPage() {
 		setTrackScreenResult(null);
 		try {
 			_encatch.trackScreen(screenName.trim() || window.location.href);
-			setTrackScreenResult(`Screen tracked: ${screenName.trim() || window.location.href}`);
+			const msg = `trackScreen: ${screenName.trim() || window.location.href}`;
+			setTrackScreenResult(msg);
+			toast.success(msg);
 		} catch (e) {
-			setTrackScreenResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+			setTrackScreenResult(msg);
+			toast.error(msg);
 		}
 	};
 
@@ -530,9 +554,13 @@ export default function EncatchTestPage() {
 		setSessionResult(null);
 		try {
 			_encatch.startSession();
-			setSessionResult("Session started (ping interval + URL tracking enabled)");
+			const msg = "startSession called (ping + URL tracking enabled)";
+			setSessionResult(msg);
+			toast.success(msg);
 		} catch (e) {
-			setSessionResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+			setSessionResult(msg);
+			toast.error(msg);
 		}
 	};
 
@@ -540,9 +568,13 @@ export default function EncatchTestPage() {
 		setSessionRecordingResult(null);
 		try {
 			encatchPauseSession();
-			setSessionRecordingResult("pauseSession() called");
+			const msg = "pauseSession() called";
+			setSessionRecordingResult(msg);
+			toast.success(msg);
 		} catch (e) {
-			setSessionRecordingResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+			setSessionRecordingResult(msg);
+			toast.error(msg);
 		}
 	};
 
@@ -550,9 +582,13 @@ export default function EncatchTestPage() {
 		setSessionRecordingResult(null);
 		try {
 			encatchResumeSession();
-			setSessionRecordingResult("resumeSession() called");
+			const msg = "resumeSession() called";
+			setSessionRecordingResult(msg);
+			toast.success(msg);
 		} catch (e) {
-			setSessionRecordingResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+			setSessionRecordingResult(msg);
+			toast.error(msg);
 		}
 	};
 
@@ -560,9 +596,13 @@ export default function EncatchTestPage() {
 		setSessionRecordingResult(null);
 		try {
 			encatchStopSession();
-			setSessionRecordingResult("stopSession() called");
+			const msg = "stopSession() called";
+			setSessionRecordingResult(msg);
+			toast.success(msg);
 		} catch (e) {
-			setSessionRecordingResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+			setSessionRecordingResult(msg);
+			toast.error(msg);
 		}
 	};
 
@@ -570,9 +610,13 @@ export default function EncatchTestPage() {
 		setResetUserResult(null);
 		try {
 			_encatch.resetUser();
-			setResetUserResult("User reset (anonymous; session cleared)");
+			const msg = "resetUser called (anonymous; session cleared)";
+			setResetUserResult(msg);
+			toast.success(msg);
 		} catch (e) {
-			setResetUserResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+			setResetUserResult(msg);
+			toast.error(msg);
 		}
 	};
 
@@ -582,7 +626,9 @@ export default function EncatchTestPage() {
 		try {
 			if (typeof localStorage !== "undefined") {
 				localStorage.removeItem(ENCATCH_DEVICE_ID_KEY);
-				setClearDeviceIdResult("encatch_device_id removed from localStorage. Refresh the page for a new device ID.");
+				const msg = "encatch_device_id removed. Refresh for a new device ID.";
+				setClearDeviceIdResult(msg);
+				toast.success(msg);
 			} else {
 				setClearDeviceIdResult("localStorage not available.");
 			}
@@ -606,11 +652,13 @@ export default function EncatchTestPage() {
 		try {
 			const values = buildDeviceValuesFromFields();
 			saveDeviceInfoTestValues(values);
-			setDeviceInfoResult(
-				`Device info set: type=${values.deviceType}, OS=${values.deviceOs}, browser=${values.browser}. Sent on next identifyUser / startSession / trackEvent.`,
-			);
+			const msg = `Device info set: type=${values.deviceType}, OS=${values.deviceOs}, browser=${values.browser}`;
+			setDeviceInfoResult(msg);
+			toast.success(msg);
 		} catch (e) {
-			setDeviceInfoResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+			setDeviceInfoResult(msg);
+			toast.error(msg);
 		}
 	};
 
@@ -622,6 +670,7 @@ export default function EncatchTestPage() {
 		setBrowserVersion(DEFAULT_DEVICE_INFO_TEST_VALUES.browserVersion);
 		saveDeviceInfoTestValues(DEFAULT_DEVICE_INFO_TEST_VALUES);
 		setDeviceInfoResult("Reset to test defaults (desktop / Windows / Chrome).");
+		toast.success("Device info reset to defaults");
 	};
 
 	const handlePushDeviceInfo = () => {
@@ -630,10 +679,14 @@ export default function EncatchTestPage() {
 			saveDeviceInfoTestValues(buildDeviceValuesFromFields());
 			if (identifyUserName.trim()) {
 				void handleIdentify();
-				setDeviceInfoResult("Device info saved and identify user called — check $deviceInfo in the network tab.");
+				const msg = "Device info saved & identifyUser called";
+				setDeviceInfoResult(msg);
+				toast.success(msg);
 			} else {
 				_encatch.startSession();
-				setDeviceInfoResult("Device info saved and session started — check $deviceInfo on ping/track requests.");
+				const msg = "Device info saved & startSession called";
+				setDeviceInfoResult(msg);
+				toast.success(msg);
 			}
 		} catch (e) {
 			setDeviceInfoResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
@@ -646,14 +699,20 @@ export default function EncatchTestPage() {
 			const formId = feedbackFormId1.trim() || getEncatchFeedbackFormId1();
 			const { context, skippedKeys } = buildShowFormContext(showFormContextRows);
 			if (skippedKeys.length > 0) {
-				setShowFormResult(`Error: showForm context values must be string, number, or boolean (use JSON literals). Invalid keys: ${skippedKeys.join(", ")}`);
+				const msg = `Error: showForm context values must be string, number, or boolean. Invalid keys: ${skippedKeys.join(", ")}`;
+				setShowFormResult(msg);
+				toast.error(msg);
 				return;
 			}
 			_encatch.showForm(formId, { reset: resetMode1, ...(context ? { context } : {}) });
 			const ctxMsg = context ? `, context=${JSON.stringify(context)}` : "";
-			setShowFormResult(`Form 1 opened (${formId}) with reset=${resetMode1}${ctxMsg}`);
+			const msg = `showForm: ${formId} (reset=${resetMode1}${ctxMsg})`;
+			setShowFormResult(msg);
+			toast.success(msg);
 		} catch (e) {
-			setShowFormResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+			setShowFormResult(msg);
+			toast.error(msg);
 		}
 	};
 
@@ -663,14 +722,20 @@ export default function EncatchTestPage() {
 			const formId = feedbackFormId2.trim() || getEncatchFeedbackFormId2();
 			const { context, skippedKeys } = buildShowFormContext(showFormContextRows);
 			if (skippedKeys.length > 0) {
-				setShowFormResult(`Error: showForm context values must be string, number, or boolean (use JSON literals). Invalid keys: ${skippedKeys.join(", ")}`);
+				const msg = `Error: showForm context values must be string, number, or boolean. Invalid keys: ${skippedKeys.join(", ")}`;
+				setShowFormResult(msg);
+				toast.error(msg);
 				return;
 			}
 			_encatch.showForm(formId, { reset: resetMode2, ...(context ? { context } : {}) });
 			const ctxMsg = context ? `, context=${JSON.stringify(context)}` : "";
-			setShowFormResult(`Form 2 opened (${formId}) with reset=${resetMode2}${ctxMsg}`);
+			const msg = `showForm: ${formId} (reset=${resetMode2}${ctxMsg})`;
+			setShowFormResult(msg);
+			toast.success(msg);
 		} catch (e) {
-			setShowFormResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
+			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+			setShowFormResult(msg);
+			toast.error(msg);
 		}
 	};
 
@@ -679,6 +744,7 @@ export default function EncatchTestPage() {
 		const validRows = prefillRows.filter((r) => r.questionId.trim());
 		if (validRows.length === 0) {
 			setAddToResponseResult("Error: add at least one question ID");
+			toast.error("Add at least one question ID");
 			return;
 		}
 		const applied: string[] = [];
@@ -695,10 +761,14 @@ export default function EncatchTestPage() {
 		}
 		if (errors.length > 0) {
 			const appliedMsg = applied.length > 0 ? ` Added: ${applied.join("; ")}` : "";
-			setAddToResponseResult(`Error: ${errors.join("; ")}.${appliedMsg}`);
+			const msg = `Error: ${errors.join("; ")}.${appliedMsg}`;
+			setAddToResponseResult(msg);
+			toast.error(msg);
 			return;
 		}
-		setAddToResponseResult(`Added ${applied.length} response${applied.length === 1 ? "" : "s"}: ${applied.join("; ")}`);
+		const msg = `addToResponse: ${applied.length} answer${applied.length === 1 ? "" : "s"} staged`;
+		setAddToResponseResult(msg);
+		toast.success(msg);
 	};
 
 	const handleRandomUser = () => {
