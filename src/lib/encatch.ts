@@ -281,14 +281,15 @@ export function mapTraitsToSdk(traits: Record<string, unknown> | undefined): Use
 /**
  * Initialize the Encatch SDK. Call once when the app mounts (browser only).
  * Uses API key from localStorage for the selected host.
+ * @param force — if true, bypasses the _initialized check and re-inits with the current config.
  */
-export function initEncatch(): InitEncatchResult {
+export function initEncatch(force = false): InitEncatchResult {
 	if (typeof window === "undefined") {
 		return { status: "skipped", reason: "ssr", message: "Not in browser." };
 	}
 	const encatchOrigin = getEncatchInitOrigin();
 	const hostLabel = getEncatchHostLabel(encatchOrigin);
-	if (_encatch._initialized) {
+	if (_encatch._initialized && !force) {
 		return { status: "already_initialized", host: encatchOrigin, hostLabel };
 	}
 	const apiKey = getEncatchApiKey();
@@ -304,6 +305,12 @@ export function initEncatch(): InitEncatchResult {
 	const apiBaseUrl = getEncatchApiBaseUrl(encatchOrigin);
 	if (apiBaseUrl) {
 		encatchConfig.apiBaseUrl = apiBaseUrl;
+	}
+	// Force reinit: reset internal state so init() runs fresh
+	if (force && _encatch._initialized) {
+		_encatch._initialized = false;
+		_encatch._apiKey = null;
+		_encatch._q = [];
 	}
 	_encatch.init(apiKey, encatchConfig);
 	return { status: "initialized", host: encatchOrigin, hostLabel };

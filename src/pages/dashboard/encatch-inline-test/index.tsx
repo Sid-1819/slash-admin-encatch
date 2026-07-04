@@ -689,12 +689,15 @@ export default function EncatchInlineTestPage() {
 			const key = encatchApiKey.trim();
 			setEncatchApiKeyForHost(encatchHost, key);
 			setSavedApiKeyEntries(getEncatchSavedApiKeyEntries());
-			const result = initEncatch();
+			const currentSdkHost = _encatch._initialized ? _encatch._config?.webHost : undefined;
+			const currentSdkKey = _encatch._apiKey;
+			const needsForce = _encatch._initialized && (currentSdkHost !== encatchHost || currentSdkKey !== key);
+			const result = initEncatch(needsForce);
 			if (result.status === "initialized") {
-				setInitResult(`SDK initialized with host ${result.hostLabel} (${result.host}).`);
+				setInitResult(`SDK initialized → ${result.hostLabel} (${result.host})`);
 				toast.success(`SDK initialized with ${result.hostLabel}.`);
 			} else if (result.status === "already_initialized") {
-				setInitResult(`SDK already initialized with host ${result.hostLabel} (${result.host}). Reload the page to use a new API key or host.`);
+				setInitResult(`SDK active → ${result.hostLabel} (${result.host})`);
 				toast.message(`Already initialized with ${result.hostLabel}.`);
 			} else {
 				setInitResult(result.message);

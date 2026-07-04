@@ -6,7 +6,7 @@ import {
 	ENCATCH_TEST_STORAGE_KEYS,
 	type EncatchSavedApiKeyEntry,
 	formatEncatchApiKeyPreview,
-	formatEncatchSavedApiKeyLabel,
+	getEncatchApiBaseUrl,
 	getEncatchApiKeyForHost,
 	getEncatchFeedbackFormId1,
 	getEncatchFeedbackFormId2,
@@ -271,7 +271,7 @@ export default function EncatchTestPage() {
 	// Encatch config (API key + host) — from localStorage, synced with login
 	const [encatchApiKey, setEncatchApiKey] = useState("");
 	const [encatchHost, setEncatchHost] = useState(ENCATCH_DEFAULT_HOST);
-	const [savedApiKeyEntries, setSavedApiKeyEntries] = useState<EncatchSavedApiKeyEntry[]>([]);
+	const [savedApiKeyEntries, setSavedApiKeyEntries] = useState<EncatchSavedApiKeyEntry[]>(getEncatchSavedApiKeyEntries);
 	const [initResult, setInitResult] = useState<string | null>(null);
 
 	// Session / reset
@@ -345,8 +345,9 @@ export default function EncatchTestPage() {
 			setEncatchApiKey(getEncatchApiKeyForHost(host));
 			setSavedApiKeyEntries(getEncatchSavedApiKeyEntries());
 			if (_encatch._initialized) {
-				const initHost = getEncatchInitOrigin();
-				setInitResult(`SDK initialized with host ${getEncatchHostLabel(initHost)} (${initHost}).`);
+				const initHost = _encatch._config?.webHost || getEncatchInitOrigin();
+				const apiBaseUrl = getEncatchApiBaseUrl(initHost);
+				setInitResult(`SDK active → ${getEncatchHostLabel(initHost)} (API: ${apiBaseUrl || initHost})`);
 			}
 		} catch {
 			// ignore
@@ -801,36 +802,17 @@ export default function EncatchTestPage() {
 		setIdentifySetDisplayName(displayName);
 	};
 
-	const handleEncatchHostChange = (newHost: string) => {
-		if (encatchApiKey.trim()) {
-			setEncatchApiKeyForHost(encatchHost, encatchApiKey);
-		}
-		setEncatchHost(newHost);
-		setEncatchApiKey(getEncatchApiKeyForHost(newHost));
-		setSavedApiKeyEntries(getEncatchSavedApiKeyEntries());
-	};
-
 	const handleSavedApiKeySelect = (host: string) => {
-		const entry = savedApiKeyEntries.find((item) => item.host === host);
-		if (!entry) return;
-		setEncatchHost(entry.host);
-		setEncatchApiKey(entry.apiKey);
-		setEncatchApiKeyForHost(entry.host, entry.apiKey);
+		if (encatchApiKey.trim()) {
+			setEncatchApiKeyForHost(encatchHost, encatchApiKey.trim());
+		}
+		setEncatchHost(host);
+		setEncatchApiKey(getEncatchApiKeyForHost(host));
+		refreshSavedApiKeyEntries();
 	};
 
 	const refreshSavedApiKeyEntries = () => {
 		setSavedApiKeyEntries(getEncatchSavedApiKeyEntries());
-	};
-
-	const saveEncatchConfig = () => {
-		try {
-			const key = encatchApiKey.trim();
-			setEncatchApiKeyForHost(encatchHost, key);
-			refreshSavedApiKeyEntries();
-			toast.success(`Encatch config saved for ${getEncatchHostLabel(encatchHost)}. Click Initialize SDK or reload to apply.`);
-		} catch {
-			toast.error("Failed to save Encatch config.");
-		}
 	};
 
 	const handleInitializeSdk = () => {
@@ -839,13 +821,19 @@ export default function EncatchTestPage() {
 			const key = encatchApiKey.trim();
 			setEncatchApiKeyForHost(encatchHost, key);
 			refreshSavedApiKeyEntries();
-			const result = initEncatch();
+			// Force reinit if host or key changed from what SDK currently uses
+			const currentSdkHost = _encatch._initialized ? _encatch._config?.webHost : undefined;
+			const currentSdkKey = _encatch._apiKey;
+			const needsForce = _encatch._initialized && (currentSdkHost !== encatchHost || currentSdkKey !== key);
+			const result = initEncatch(needsForce);
 			if (result.status === "initialized") {
-				setInitResult(`SDK initialized with host ${result.hostLabel} (${result.host}).`);
-				toast.success(`SDK initialized with ${result.hostLabel}.`);
+				const apiBaseUrl = getEncatchApiBaseUrl(result.host);
+				setInitResult(`SDK initialized → ${result.hostLabel} (API: ${apiBaseUrl || result.host})`);
+				toast.success(`SDK initialized with ${result.hostLabel}`);
 			} else if (result.status === "already_initialized") {
-				setInitResult(`SDK already initialized with host ${result.hostLabel} (${result.host}). Reload the page to use a new API key or host.`);
-				toast.message(`Already initialized with ${result.hostLabel}.`);
+				const apiBaseUrl = getEncatchApiBaseUrl(result.host);
+				setInitResult(`SDK active → ${result.hostLabel} (API: ${apiBaseUrl || result.host})`);
+				toast.message(`Already initialized with ${result.hostLabel}`);
 			} else {
 				setInitResult(result.message);
 				toast.error(result.message);
@@ -961,95 +949,106 @@ export default function EncatchTestPage() {
 					</div>
 				</div>
 				<Badge variant={_encatch._initialized ? "success" : "warning"} className="shrink-0">
-					{_encatch._initialized ? "SDK Initialized" : "Not Initialized"}
+					{_encatch._initialized ? `Connected: ${getEncatchHostLabel(_encatch._config?.webHost)}` : "Not Initialized"}
 				</Badge>
 			</div>
 
 			{/* Encatch config */}
-			<Section title="Encatch config" description="Pick an environment, enter its API key, then save or initialize." icon="solar:settings-bold-duotone">
+			<Section
+				title="Encatch config"
+				description="API keys are auto-saved per environment. Click a card to switch and initialize."
+				icon="solar:settings-bold-duotone"
+			>
 				<div className="flex flex-col gap-5">
 					<ResultMessage message={initResult} />
 
-					<div className="grid gap-4 md:grid-cols-2">
-						<div className="flex flex-col gap-1.5">
-							<Label htmlFor="encatch-host">Environment</Label>
-							<Select value={encatchHost} onValueChange={handleEncatchHostChange}>
-								<SelectTrigger id="encatch-host" className="w-full">
-									<SelectValue placeholder="Select environment" />
-								</SelectTrigger>
-								<SelectContent>
-									{ENCATCH_HOST_OPTIONS.map((opt) => (
-										<SelectItem key={opt.value} value={opt.value}>
-											{opt.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-						<div className="flex flex-col gap-1.5">
-							<Label htmlFor="encatch-api-key">API key</Label>
-							<Input
-								id="encatch-api-key"
-								type="text"
-								placeholder={`Key for ${getEncatchHostLabel(encatchHost)}`}
-								value={encatchApiKey}
-								onChange={(e) => setEncatchApiKey(e.target.value)}
-								autoComplete="off"
-								className="w-full font-mono text-xs"
-							/>
-						</div>
-					</div>
-
-					{savedApiKeyEntries.length > 0 && (
-						<div className="flex flex-col gap-2">
-							<Label className="text-xs text-muted-foreground">Saved configurations</Label>
-							<div className="flex flex-wrap gap-2">
-								{savedApiKeyEntries.map((entry) => {
-									const isActive = entry.host === encatchHost && entry.apiKey === encatchApiKey;
-									return (
-										<Button
-											key={entry.host}
-											type="button"
-											variant={isActive ? "default" : "outline"}
-											size="sm"
-											className="h-auto min-w-[10rem] flex-col items-start gap-0.5 px-3 py-2 text-left font-normal"
-											onClick={() => handleSavedApiKeySelect(entry.host)}
-											title={formatEncatchSavedApiKeyLabel(entry)}
-										>
-											<span className="text-xs font-medium">{entry.hostLabel}</span>
-											<span className={`font-mono text-[10px] ${isActive ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
-												{formatEncatchApiKeyPreview(entry.apiKey)}
-											</span>
-										</Button>
-									);
-								})}
-							</div>
+					{_encatch._initialized && (
+						<div className="flex items-center gap-2 rounded-md bg-success/10 px-3 py-2 text-xs font-medium text-success-dark dark:text-success-light">
+							<Icon icon="solar:link-bold" size={14} />
+							<span>
+								API: <code className="font-mono">{getEncatchApiBaseUrl(_encatch._config?.webHost || "") || _encatch._config?.webHost}</code>
+							</span>
 						</div>
 					)}
 
-					<div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
-						<div className="flex flex-wrap gap-2">
-							<Button type="button" variant="outline" size="sm" onClick={saveEncatchConfig}>
-								Save config
-							</Button>
+					{/* Environment cards */}
+					<div className="grid gap-3 sm:grid-cols-3">
+						{ENCATCH_HOST_OPTIONS.map((opt) => {
+							const entry = savedApiKeyEntries.find((e) => e.host === opt.value);
+							const savedKey = entry?.apiKey || "";
+							const isSelected = opt.value === encatchHost;
+							const isConnected = _encatch._initialized && _encatch._config?.webHost === opt.value;
+							return (
+								<button
+									key={opt.value}
+									type="button"
+									onClick={() => handleSavedApiKeySelect(opt.value)}
+									className={`relative flex flex-col items-start gap-1 rounded-lg border-2 p-3 text-left transition-all ${
+										isConnected ? "border-success bg-success/5" : isSelected ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+									}`}
+								>
+									{isConnected && (
+										<span className="absolute top-2 right-2">
+											<span className="flex h-2 w-2 rounded-full bg-success animate-pulse" />
+										</span>
+									)}
+									<span className="text-xs font-semibold">{opt.label}</span>
+									{savedKey ? (
+										<span className="font-mono text-[10px] text-muted-foreground truncate w-full">{formatEncatchApiKeyPreview(savedKey)}</span>
+									) : (
+										<span className="text-[10px] text-muted-foreground/60 italic">No API key</span>
+									)}
+								</button>
+							);
+						})}
+					</div>
+
+					{/* API key input for selected env */}
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor="encatch-api-key" className="text-xs">
+							API key for <span className="font-semibold text-primary">{getEncatchHostLabel(encatchHost)}</span>
+						</Label>
+						<div className="flex gap-2">
+							<Input
+								id="encatch-api-key"
+								type="text"
+								placeholder={`Paste API key for ${getEncatchHostLabel(encatchHost)}`}
+								value={encatchApiKey}
+								onChange={(e) => {
+									setEncatchApiKey(e.target.value);
+									if (e.target.value.trim()) {
+										setEncatchApiKeyForHost(encatchHost, e.target.value.trim());
+										refreshSavedApiKeyEntries();
+									}
+								}}
+								onBlur={() => {
+									if (encatchApiKey.trim()) {
+										setEncatchApiKeyForHost(encatchHost, encatchApiKey.trim());
+										refreshSavedApiKeyEntries();
+									}
+								}}
+								autoComplete="off"
+								className="flex-1 font-mono text-xs"
+							/>
 							<Button type="button" size="sm" onClick={handleInitializeSdk}>
-								Initialize SDK
+								Initialize
 							</Button>
 						</div>
-						<div className="flex flex-wrap gap-2">
-							<Button
-								type="button"
-								variant="ghost"
-								size="sm"
-								className="text-destructive hover:text-destructive"
-								onClick={() => handleClearAllExceptApiKeyAndReload()}
-							>
-								Clear storage (keep keys) & reload
-							</Button>
-							<Button type="button" variant="destructive" size="sm" onClick={() => handleCleanAll()}>
-								Clean all (including cookies)
-							</Button>
-						</div>
+					</div>
+
+					<div className="flex flex-wrap gap-2 border-t border-border pt-4">
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							className="text-destructive hover:text-destructive"
+							onClick={() => handleClearAllExceptApiKeyAndReload()}
+						>
+							Clear storage (keep keys) & reload
+						</Button>
+						<Button type="button" variant="destructive" size="sm" onClick={() => handleCleanAll()}>
+							Clean all (including cookies)
+						</Button>
 					</div>
 				</div>
 			</Section>
@@ -1088,46 +1087,8 @@ export default function EncatchTestPage() {
 				</div>
 			</Section>
 
-			<div className="grid gap-4 lg:grid-cols-2">
-				<Section
-					title="trackEvent & trackScreen"
-					description="Fire a custom event or track a screen view. Screen tracking can be automatic after startSession()."
-					icon="solar:graph-up-bold-duotone"
-				>
-					<div className="flex flex-col gap-3">
-						<div className="flex flex-col gap-1.5">
-							<Label htmlFor="track-event-name">Event name</Label>
-							<div className="flex gap-2">
-								<Input
-									id="track-event-name"
-									value={trackEventName}
-									onChange={(e) => setTrackEventName(e.target.value)}
-									placeholder="e.g. button_clicked"
-									className="flex-1"
-								/>
-								<Button onClick={handleTrackEvent}>Fire event</Button>
-							</div>
-							<ResultMessage message={trackResult} />
-						</div>
-						<div className="flex flex-col gap-1.5">
-							<Label htmlFor="screen-name">Screen name</Label>
-							<div className="flex gap-2">
-								<Input
-									id="screen-name"
-									value={screenName}
-									onChange={(e) => setScreenName(e.target.value)}
-									placeholder="/dashboard/encatch-test"
-									className="flex-1"
-								/>
-								<Button variant="outline" onClick={handleTrackScreen}>
-									Track screen
-								</Button>
-							</div>
-							<ResultMessage message={trackScreenResult} />
-						</div>
-					</div>
-				</Section>
-
+			{/* identifyUser & showForm — side by side */}
+			<div className="grid gap-4 lg:grid-cols-2 items-start">
 				<Section
 					title="identifyUser"
 					description="Identify the current user. Fill simple fields; generated traits JSON is shown below."
@@ -1330,6 +1291,115 @@ export default function EncatchTestPage() {
 					</div>
 				</Section>
 
+				<Section title="showForm" description="Open a form by ID. Reset mode: always, on-complete, or never." icon="solar:document-bold-duotone">
+					<div className="flex flex-col gap-4">
+						<div className="flex flex-col gap-2">
+							<Label htmlFor="feedback-id-1">Form ID 1</Label>
+							<div className="flex flex-wrap items-end gap-2">
+								<Input
+									id="feedback-id-1"
+									value={feedbackFormId1}
+									onChange={(e) => setFeedbackFormId1(e.target.value)}
+									placeholder={getEncatchFeedbackFormId1() || "Set on login screen"}
+									className="flex-1 min-w-[120px]"
+								/>
+								<Select value={resetMode1} onValueChange={(v) => setResetMode1(v as ResetMode)}>
+									<SelectTrigger className="w-[130px]">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="always">always</SelectItem>
+										<SelectItem value="on-complete">on-complete</SelectItem>
+										<SelectItem value="never">never</SelectItem>
+									</SelectContent>
+								</Select>
+								<Button onClick={handleOpenForm1}>Open form 1</Button>
+							</div>
+						</div>
+						<div className="flex flex-col gap-2">
+							<Label htmlFor="feedback-id-2">Form ID 2</Label>
+							<div className="flex flex-wrap items-end gap-2">
+								<Input
+									id="feedback-id-2"
+									value={feedbackFormId2}
+									onChange={(e) => setFeedbackFormId2(e.target.value)}
+									placeholder={getEncatchFeedbackFormId2() || "Set on login screen"}
+									className="flex-1 min-w-[120px]"
+								/>
+								<Select value={resetMode2} onValueChange={(v) => setResetMode2(v as ResetMode)}>
+									<SelectTrigger className="w-[130px]">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="always">always</SelectItem>
+										<SelectItem value="on-complete">on-complete</SelectItem>
+										<SelectItem value="never">never</SelectItem>
+									</SelectContent>
+								</Select>
+								<Button onClick={handleOpenForm2}>Open form 2</Button>
+							</div>
+						</div>
+						<div className="flex flex-col gap-2 rounded-lg border border-border/50 bg-muted/20 p-3">
+							<div className="flex items-center justify-between gap-2">
+								<Label className="text-xs font-medium">Context (optional)</Label>
+								<Button type="button" variant="outline" size="sm" onClick={addShowFormContextRow}>
+									Add row
+								</Button>
+							</div>
+							{showFormContextRows.map((row, i) => (
+								<div key={row.id} className="flex flex-wrap gap-2">
+									<Input
+										placeholder="key"
+										value={row.key}
+										onChange={(e) => updateShowFormContextRow(i, "key", e.target.value)}
+										className="font-mono text-sm min-w-[100px] flex-1"
+									/>
+									<Input
+										placeholder='value (JSON: 42, true, "text")'
+										value={row.value}
+										onChange={(e) => updateShowFormContextRow(i, "value", e.target.value)}
+										className="font-mono text-sm min-w-[140px] flex-[2]"
+									/>
+									<Button type="button" variant="ghost" size="sm" onClick={() => removeShowFormContextRow(i)}>
+										Remove
+									</Button>
+								</div>
+							))}
+						</div>
+						<ResultMessage message={showFormResult} />
+					</div>
+				</Section>
+			</div>
+
+			{/* Other SDK methods */}
+			<div className="grid gap-4 lg:grid-cols-2">
+				<Section title="trackEvent & trackScreen" description="Fire a custom event or track a screen view." icon="solar:graph-up-bold-duotone">
+					<div className="flex flex-col gap-4">
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="event-name">Event name</Label>
+							<div className="flex gap-2">
+								<Input id="event-name" value={trackEventName} onChange={(e) => setTrackEventName(e.target.value)} placeholder="test_event" className="flex-1" />
+								<Button onClick={handleTrackEvent}>Fire event</Button>
+							</div>
+							<ResultMessage message={trackResult} />
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="screen-name">Screen name</Label>
+							<div className="flex gap-2">
+								<Input
+									id="screen-name"
+									value={screenName}
+									onChange={(e) => setScreenName(e.target.value)}
+									placeholder={window.location.href}
+									className="flex-1"
+								/>
+								<Button onClick={handleTrackScreen}>Track screen</Button>
+							</div>
+							<ResultMessage message={trackScreenResult} />
+						</div>
+					</div>
+				</Section>
+
 				<Section
 					title="setTheme, setLocale, setCountry"
 					description="Theme for Encatch UI; locale and country for form content and localization."
@@ -1495,98 +1565,6 @@ export default function EncatchTestPage() {
 						{(sessionResult || sessionRecordingResult || resetUserResult || clearDeviceIdResult) && (
 							<ResultMessage message={[sessionResult, sessionRecordingResult, resetUserResult, clearDeviceIdResult].filter(Boolean).join(" · ")} />
 						)}
-					</div>
-				</Section>
-
-				<Section title="showForm" description="Open a form by ID. Reset mode: always, on-complete, or never." icon="solar:document-bold-duotone">
-					<div className="flex flex-col gap-4">
-						<div className="flex flex-col gap-2 rounded-lg border border-border/50 bg-muted/20 p-3">
-							<div className="flex items-center justify-between gap-2">
-								<Label className="text-xs font-medium">Context (optional)</Label>
-								<Button type="button" variant="outline" size="sm" onClick={addShowFormContextRow}>
-									Add row
-								</Button>
-							</div>
-							<Text variant="caption" className="text-muted-foreground">
-								Same row set is used for both Open form 1 and Open form 2. Plain text is a string; use JSON for numbers/booleans (e.g. 42, true,
-								&quot;hello&quot;).
-							</Text>
-							{showFormContextRows.length === 0 && (
-								<Text variant="caption" className="text-muted-foreground italic">
-									No context rows — showForm is called without context.
-								</Text>
-							)}
-							{showFormContextRows.map((row, i) => (
-								<div key={row.id} className="flex flex-wrap gap-2">
-									<Input
-										placeholder="key"
-										value={row.key}
-										onChange={(e) => updateShowFormContextRow(i, "key", e.target.value)}
-										className="font-mono text-sm min-w-[100px] flex-1"
-									/>
-									<Input
-										placeholder='value or JSON: 42, true, "text"'
-										value={row.value}
-										onChange={(e) => updateShowFormContextRow(i, "value", e.target.value)}
-										className="font-mono text-sm min-w-[140px] flex-2"
-									/>
-									<Button type="button" variant="ghost" size="sm" onClick={() => removeShowFormContextRow(i)}>
-										Remove
-									</Button>
-								</div>
-							))}
-						</div>
-						<div className="flex flex-col gap-2">
-							<Label htmlFor="feedback-id-1">Form ID 1</Label>
-							<div className="flex flex-wrap items-end gap-2">
-								<Input
-									id="feedback-id-1"
-									value={feedbackFormId1}
-									onChange={(e) => setFeedbackFormId1(e.target.value)}
-									placeholder={getEncatchFeedbackFormId1() || "Set on login screen"}
-									className="flex-1 min-w-[120px]"
-								/>
-								<div className="flex items-center gap-2 shrink-0">
-									<Select value={resetMode1} onValueChange={(v) => setResetMode1(v as ResetMode)}>
-										<SelectTrigger className="w-[130px]">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="always">always</SelectItem>
-											<SelectItem value="on-complete">on-complete</SelectItem>
-											<SelectItem value="never">never</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
-								<Button onClick={handleOpenForm1}>Open form 1</Button>
-							</div>
-						</div>
-						<div className="flex flex-col gap-2">
-							<Label htmlFor="feedback-id-2">Form ID 2</Label>
-							<div className="flex flex-wrap items-end gap-2">
-								<Input
-									id="feedback-id-2"
-									value={feedbackFormId2}
-									onChange={(e) => setFeedbackFormId2(e.target.value)}
-									placeholder={getEncatchFeedbackFormId2() || "Set on login screen"}
-									className="flex-1 min-w-[120px]"
-								/>
-								<div className="flex items-center gap-2 shrink-0">
-									<Select value={resetMode2} onValueChange={(v) => setResetMode2(v as ResetMode)}>
-										<SelectTrigger className="w-[130px]">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="always">always</SelectItem>
-											<SelectItem value="on-complete">on-complete</SelectItem>
-											<SelectItem value="never">never</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
-								<Button onClick={handleOpenForm2}>Open form 2</Button>
-							</div>
-						</div>
-						<ResultMessage message={showFormResult} />
 					</div>
 				</Section>
 
