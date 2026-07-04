@@ -302,6 +302,29 @@ export default function EncatchTestPage() {
 		return () => unsubscribe();
 	}, [appendEvent]);
 
+	// Intercept fetch to show Encatch API response status codes
+	useEffect(() => {
+		const originalFetch = window.fetch;
+		window.fetch = async (...args) => {
+			const url = typeof args[0] === "string" ? args[0] : args[0] instanceof Request ? args[0].url : "";
+			const isEncatch = /encatch\.com/.test(url);
+			const response = await originalFetch(...args);
+			if (isEncatch) {
+				const method = (typeof args[1]?.method === "string" ? args[1].method : "GET").toUpperCase();
+				const path = new URL(url).pathname;
+				if (response.ok) {
+					toast.success(`${method} ${path} → ${response.status}`, { duration: 2500 });
+				} else {
+					toast.error(`${method} ${path} → ${response.status} ${response.statusText}`, { duration: 4000 });
+				}
+			}
+			return response;
+		};
+		return () => {
+			window.fetch = originalFetch;
+		};
+	}, []);
+
 	// Keep fetch patch in sync whenever manual device fields change
 	useEffect(() => {
 		saveDeviceInfoTestValues({
