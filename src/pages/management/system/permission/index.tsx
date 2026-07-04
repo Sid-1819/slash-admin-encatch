@@ -2,7 +2,7 @@ import { Icon } from "@/components/icon";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardHeader } from "@/ui/card";
-import Table, { type ColumnsType } from "antd/es/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/ui/table";
 import { isNil } from "ramda";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -22,8 +22,8 @@ const defaultPermissionValue: Permission_Old = {
 	status: BasicStatus.ENABLE,
 	type: PermissionType.CATALOGUE,
 };
+
 export default function PermissionPage() {
-	// const permissions = useUserPermission();
 	const { t } = useTranslation();
 
 	const [permissionModalProps, setPermissionModalProps] = useState<PermissionModalProps>({
@@ -37,71 +37,13 @@ export default function PermissionPage() {
 			setPermissionModalProps((prev) => ({ ...prev, show: false }));
 		},
 	});
-	const columns: ColumnsType<Permission_Old> = [
-		{
-			title: "Name",
-			dataIndex: "name",
-			width: 300,
-			render: (_, record) => <div>{t(record.label)}</div>,
-		},
-		{
-			title: "Type",
-			dataIndex: "type",
-			width: 60,
-			render: (_, record) => <Badge variant="info">{PermissionType[record.type]}</Badge>,
-		},
-		{
-			title: "Icon",
-			dataIndex: "icon",
-			width: 60,
-			render: (icon: string) => {
-				if (isNil(icon)) return "";
-				if (icon.startsWith("ic")) {
-					return <Icon icon={`local:${icon}`} size={18} className="ant-menu-item-icon" />;
-				}
-				return <Icon icon={icon} size={18} className="ant-menu-item-icon" />;
-			},
-		},
-		{
-			title: "Component",
-			dataIndex: "component",
-		},
-		{
-			title: "Status",
-			dataIndex: "status",
-			align: "center",
-			width: 120,
-			render: (status) => <Badge variant={status === BasicStatus.DISABLE ? "error" : "success"}>{status === BasicStatus.DISABLE ? "Disable" : "Enable"}</Badge>,
-		},
-		{ title: "Order", dataIndex: "order", width: 60 },
-		{
-			title: "Action",
-			key: "operation",
-			align: "center",
-			width: 100,
-			render: (_, record) => (
-				<div className="flex w-full justify-end text-gray">
-					{record?.type === PermissionType.CATALOGUE && (
-						<Button variant="ghost" size="icon" onClick={() => onCreate(record.id)}>
-							<Icon icon="gridicons:add-outline" size={18} />
-						</Button>
-					)}
-					<Button variant="ghost" size="icon" onClick={() => onEdit(record)}>
-						<Icon icon="solar:pen-bold-duotone" size={18} />
-					</Button>
-					<Button variant="ghost" size="icon">
-						<Icon icon="mingcute:delete-2-fill" size={18} className="text-error!" />
-					</Button>
-				</div>
-			),
-		},
-	];
+
+	const permissions: Permission_Old[] = [];
 
 	const onCreate = (parentId?: string) => {
 		setPermissionModalProps((prev) => ({
 			...prev,
 			show: true,
-			...defaultPermissionValue,
 			title: "New",
 			formValue: { ...defaultPermissionValue, parentId: parentId ?? "" },
 		}));
@@ -115,6 +57,7 @@ export default function PermissionPage() {
 			formValue,
 		}));
 	};
+
 	return (
 		<Card>
 			<CardHeader>
@@ -124,7 +67,60 @@ export default function PermissionPage() {
 				</div>
 			</CardHeader>
 			<CardContent>
-				<Table rowKey="id" size="small" scroll={{ x: "max-content" }} pagination={false} columns={columns} dataSource={[]} />
+				<Table>
+					<TableHeader>
+						<TableRow>
+							<TableHead className="w-[300px]">Name</TableHead>
+							<TableHead className="w-[60px]">Type</TableHead>
+							<TableHead className="w-[60px]">Icon</TableHead>
+							<TableHead>Component</TableHead>
+							<TableHead className="text-center w-[120px]">Status</TableHead>
+							<TableHead className="w-[60px]">Order</TableHead>
+							<TableHead className="text-center w-[100px]">Action</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{permissions.length === 0 ? (
+							<TableRow>
+								<TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+									No permissions found.
+								</TableCell>
+							</TableRow>
+						) : (
+							permissions.map((record) => (
+								<TableRow key={record.id}>
+									<TableCell>{t(record.label)}</TableCell>
+									<TableCell>
+										<Badge variant="info">{PermissionType[record.type]}</Badge>
+									</TableCell>
+									<TableCell>{!isNil(record.icon) && <Icon icon={record.icon.startsWith("ic") ? `local:${record.icon}` : record.icon} size={18} />}</TableCell>
+									<TableCell>{record.component}</TableCell>
+									<TableCell className="text-center">
+										<Badge variant={record.status === BasicStatus.DISABLE ? "error" : "success"}>
+											{record.status === BasicStatus.DISABLE ? "Disable" : "Enable"}
+										</Badge>
+									</TableCell>
+									<TableCell>{record.order}</TableCell>
+									<TableCell>
+										<div className="flex w-full justify-end text-muted-foreground">
+											{record?.type === PermissionType.CATALOGUE && (
+												<Button variant="ghost" size="icon" onClick={() => onCreate(record.id)}>
+													<Icon icon="gridicons:add-outline" size={18} />
+												</Button>
+											)}
+											<Button variant="ghost" size="icon" onClick={() => onEdit(record)}>
+												<Icon icon="solar:pen-bold-duotone" size={18} />
+											</Button>
+											<Button variant="ghost" size="icon">
+												<Icon icon="mingcute:delete-2-fill" size={18} className="text-destructive" />
+											</Button>
+										</div>
+									</TableCell>
+								</TableRow>
+							))
+						)}
+					</TableBody>
+				</Table>
 			</CardContent>
 			<PermissionModal {...permissionModalProps} />
 		</Card>

@@ -37,6 +37,7 @@ import {
 	parseAddToResponseValue,
 	serializeAddToResponsePrefillRows,
 } from "@/lib/add-to-response-types";
+import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card";
 import { Input } from "@/ui/input";
@@ -63,19 +64,26 @@ type KeyValueRow = KeyValue & { id: string };
 function Section({
 	title,
 	description,
+	icon,
 	children,
 }: {
 	title: string;
 	description?: string;
+	icon?: string;
 	children: React.ReactNode;
 }) {
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle className="text-base">{title}</CardTitle>
-				{description && <CardDescription>{description}</CardDescription>}
+		<Card className="overflow-hidden">
+			<CardHeader className="border-b border-border/40 bg-muted/20 pb-3">
+				<div className="flex items-start gap-2">
+					{icon && <Icon icon={icon} size={18} className="mt-0.5 text-primary shrink-0" />}
+					<div>
+						<CardTitle className="text-sm font-semibold">{title}</CardTitle>
+						{description && <CardDescription className="text-xs mt-0.5">{description}</CardDescription>}
+					</div>
+				</div>
 			</CardHeader>
-			<CardContent>{children}</CardContent>
+			<CardContent className="pt-4">{children}</CardContent>
 		</Card>
 	);
 }
@@ -195,6 +203,16 @@ function buildShowFormContext(rows: KeyValueRow[]): {
 		context: Object.keys(out).length > 0 ? out : undefined,
 		skippedKeys,
 	};
+}
+
+function ResultMessage({ message }: { message: string | null }) {
+	if (!message) return null;
+	const isError = message.toLowerCase().startsWith("error");
+	return (
+		<div className={`mt-2 rounded-md px-3 py-2 text-xs font-medium ${isError ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
+			{message}
+		</div>
+	);
 }
 
 export default function EncatchTestPage() {
@@ -803,28 +821,61 @@ export default function EncatchTestPage() {
 		window.location.reload();
 	};
 
+	/** Clear ALL client-side storage (localStorage, sessionStorage, cookies, IndexedDB) and reload. */
+	const handleCleanAll = async () => {
+		try {
+			if (typeof localStorage !== "undefined") localStorage.clear();
+			if (typeof sessionStorage !== "undefined") sessionStorage.clear();
+			// Clear cookies (non-HttpOnly only)
+			const cookies = document.cookie.split("; ");
+			for (const cookie of cookies) {
+				const eq = cookie.indexOf("=");
+				const name = eq > -1 ? cookie.slice(0, eq).trim() : cookie.trim();
+				if (name) {
+					document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+					document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`;
+				}
+			}
+			// Clear IndexedDB
+			if (typeof indexedDB !== "undefined") {
+				const idb = indexedDB as IDBFactory & { databases?: () => Promise<{ name: string }[]> };
+				if (typeof idb.databases === "function") {
+					const dbs = await idb.databases();
+					for (const db of dbs) {
+						if (db.name) indexedDB.deleteDatabase(db.name);
+					}
+				}
+			}
+			window.location.reload();
+		} catch {
+			toast.error("Failed to clean all storage.");
+		}
+	};
+
 	return (
-		<div className="flex flex-col gap-6">
-			<div className="flex items-center gap-2">
-				<Icon icon="solar:bug-minimalistic-bold-duotone" size={28} />
-				<div>
-					<h2 className="text-2xl font-bold">Encatch SDK Test</h2>
-					<Text variant="body2" className="text-muted-foreground">
-						Test all @encatch/web-sdk methods via _encatch. Ensure Encatch is initialized (e.g. via EncatchProvider).
-					</Text>
+		<div className="flex flex-col gap-6 pb-8">
+			{/* Page header */}
+			<div className="flex items-center justify-between">
+				<div className="flex items-center gap-3">
+					<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+						<Icon icon="solar:bug-minimalistic-bold-duotone" size={22} className="text-primary" />
+					</div>
+					<div>
+						<h2 className="text-xl font-bold tracking-tight">Encatch SDK Test</h2>
+						<Text variant="body2" className="text-muted-foreground text-xs">
+							Test all @encatch/web-sdk methods. Ensure Encatch is initialized first.
+						</Text>
+					</div>
 				</div>
+				<Badge variant={_encatch._initialized ? "success" : "warning"} className="shrink-0">
+					{_encatch._initialized ? "SDK Initialized" : "Not Initialized"}
+				</Badge>
 			</div>
 
 			{/* Encatch config */}
-			<Section title="Encatch config" description="Pick an environment, enter its API key, then save or initialize.">
+			<Section title="Encatch config" description="Pick an environment, enter its API key, then save or initialize." icon="solar:settings-bold-duotone">
 				<div className="flex flex-col gap-5">
-					{initResult && (
-						<div className="rounded-lg border border-border bg-muted/50 px-4 py-3">
-							<Text variant="caption" className="font-medium text-foreground">
-								{initResult}
-							</Text>
-						</div>
-					)}
+					<ResultMessage message={initResult} />
 
 					<div className="grid gap-4 md:grid-cols-2">
 						<div className="flex flex-col gap-1.5">
@@ -892,53 +943,63 @@ export default function EncatchTestPage() {
 								Initialize SDK
 							</Button>
 						</div>
-						<Button
-							type="button"
-							variant="ghost"
-							size="sm"
-							className="text-destructive hover:text-destructive"
-							onClick={() => handleClearAllExceptApiKeyAndReload()}
-						>
-							Clear storage (keep keys) & reload
-						</Button>
+						<div className="flex flex-wrap gap-2">
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								className="text-destructive hover:text-destructive"
+								onClick={() => handleClearAllExceptApiKeyAndReload()}
+							>
+								Clear storage (keep keys) & reload
+							</Button>
+							<Button type="button" variant="destructive" size="sm" onClick={() => handleCleanAll()}>
+								Clean all (including cookies)
+							</Button>
+						</div>
 					</div>
 				</div>
 			</Section>
 
 			{/* Event log from _encatch.on() */}
-			<Section
-				title="on (event subscription)"
-				description="Subscribe to form/SDK events. Last events appear below (form:show, form:complete, form:close, etc.)."
-			>
+			<Section title="on (event subscription)" description="Subscribe to form/SDK events. Last events appear below." icon="solar:bell-bold-duotone">
 				<div className="flex flex-col gap-2">
-					<Text variant="caption" className="text-muted-foreground">
-						Events received:
-					</Text>
 					{eventLog.length === 0 ? (
-						<Text variant="caption" className="text-muted-foreground italic">
-							No events yet. Open a form or interact to see events.
-						</Text>
+						<div className="flex flex-col items-center justify-center py-6 text-center">
+							<Icon icon="solar:inbox-line-bold-duotone" size={32} className="text-muted-foreground/40 mb-2" />
+							<Text variant="caption" className="text-muted-foreground">
+								No events yet. Open a form or interact to see events.
+							</Text>
+						</div>
 					) : (
-						<ul className="max-h-48 overflow-y-auto rounded border border-input bg-muted/30 p-2 font-mono text-xs">
+						<div className="max-h-56 overflow-y-auto rounded-lg border border-border bg-muted/20 divide-y divide-border/50">
 							{eventLog.map((entry, i) => (
-								<li key={`${entry.at}-${i}`} className="flex flex-col gap-0.5 py-1">
-									<span className="font-semibold text-foreground">{entry.eventType}</span>
-									<span className="text-muted-foreground">
-										{entry.payload.formId != null ? `formId: ${entry.payload.formId}` : ""}
-										{entry.payload.data != null ? ` | data: ${JSON.stringify(entry.payload.data)}` : ""}
-									</span>
-									<span className="text-muted-foreground/70">{entry.at}</span>
-								</li>
+								<div key={`${entry.at}-${i}`} className="flex items-start gap-3 px-3 py-2.5">
+									<div className="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0" />
+									<div className="flex-1 min-w-0">
+										<div className="flex items-center justify-between gap-2">
+											<span className="font-mono text-xs font-semibold text-foreground">{entry.eventType}</span>
+											<span className="text-[10px] text-muted-foreground/60 shrink-0">{new Date(entry.at).toLocaleTimeString()}</span>
+										</div>
+										{(entry.payload.formId != null || entry.payload.data != null) && (
+											<span className="text-[11px] text-muted-foreground truncate block">
+												{entry.payload.formId != null ? `formId: ${entry.payload.formId}` : ""}
+												{entry.payload.data != null ? ` | data: ${JSON.stringify(entry.payload.data)}` : ""}
+											</span>
+										)}
+									</div>
+								</div>
 							))}
-						</ul>
+						</div>
 					)}
 				</div>
 			</Section>
 
-			<div className="grid gap-4 md:grid-cols-2">
+			<div className="grid gap-4 lg:grid-cols-2">
 				<Section
 					title="trackEvent & trackScreen"
 					description="Fire a custom event or track a screen view. Screen tracking can be automatic after startSession()."
+					icon="solar:graph-up-bold-duotone"
 				>
 					<div className="flex flex-col gap-3">
 						<div className="flex flex-col gap-1.5">
@@ -953,11 +1014,7 @@ export default function EncatchTestPage() {
 								/>
 								<Button onClick={handleTrackEvent}>Fire event</Button>
 							</div>
-							{trackResult && (
-								<Text variant="caption" className="text-muted-foreground">
-									{trackResult}
-								</Text>
-							)}
+							<ResultMessage message={trackResult} />
 						</div>
 						<div className="flex flex-col gap-1.5">
 							<Label htmlFor="screen-name">Screen name</Label>
@@ -973,16 +1030,16 @@ export default function EncatchTestPage() {
 									Track screen
 								</Button>
 							</div>
-							{trackScreenResult && (
-								<Text variant="caption" className="text-muted-foreground">
-									{trackScreenResult}
-								</Text>
-							)}
+							<ResultMessage message={trackScreenResult} />
 						</div>
 					</div>
 				</Section>
 
-				<Section title="identifyUser" description="Identify the current user. Fill simple fields; generated traits JSON is shown below.">
+				<Section
+					title="identifyUser"
+					description="Identify the current user. Fill simple fields; generated traits JSON is shown below."
+					icon="solar:user-bold-duotone"
+				>
 					<div className="flex flex-col gap-4">
 						<div className="flex flex-col gap-1.5">
 							<Label htmlFor="identify-user-name">User name</Label>
@@ -1176,15 +1233,15 @@ export default function EncatchTestPage() {
 						</div>
 
 						<Button onClick={() => void handleIdentify()}>Identify user</Button>
-						{identifyResult && (
-							<Text variant="caption" className="text-muted-foreground">
-								{identifyResult}
-							</Text>
-						)}
+						<ResultMessage message={identifyResult} />
 					</div>
 				</Section>
 
-				<Section title="setTheme, setLocale, setCountry" description="Theme for Encatch UI; locale and country for form content and localization.">
+				<Section
+					title="setTheme, setLocale, setCountry"
+					description="Theme for Encatch UI; locale and country for form content and localization."
+					icon="solar:palette-bold-duotone"
+				>
 					<div className="flex flex-col gap-3">
 						<div className="flex flex-wrap items-center gap-2">
 							<Label htmlFor="encatch-theme" className="text-muted-foreground text-xs shrink-0">
@@ -1205,11 +1262,7 @@ export default function EncatchTestPage() {
 							<Button size="sm" onClick={handleSetTheme}>
 								Set
 							</Button>
-							{themeResult && (
-								<Text variant="caption" className="text-muted-foreground">
-									{themeResult}
-								</Text>
-							)}
+							<ResultMessage message={themeResult} />
 						</div>
 						<div className="flex flex-wrap items-center gap-2">
 							<Label htmlFor="language" className="text-muted-foreground text-xs shrink-0">
@@ -1219,11 +1272,7 @@ export default function EncatchTestPage() {
 							<Button size="sm" onClick={handleSetLocale}>
 								Set
 							</Button>
-							{languageResult && (
-								<Text variant="caption" className="text-muted-foreground">
-									{languageResult}
-								</Text>
-							)}
+							<ResultMessage message={languageResult} />
 						</div>
 						<div className="flex flex-wrap items-center gap-2">
 							<Label htmlFor="country" className="text-muted-foreground text-xs shrink-0">
@@ -1233,18 +1282,15 @@ export default function EncatchTestPage() {
 							<Button size="sm" onClick={handleSetCountry}>
 								Set
 							</Button>
-							{countryResult && (
-								<Text variant="caption" className="text-muted-foreground">
-									{countryResult}
-								</Text>
-							)}
+							<ResultMessage message={countryResult} />
 						</div>
 					</div>
 				</Section>
 
 				<Section
 					title="Device info: type, OS, browser"
-					description="Test environment only — pick device type, OS, and browser manually (not auto-detected). Click Set device info, then identify or start session. Values are injected into $deviceInfo on Encatch API requests by the slash-admin test harness."
+					description="Test environment only — pick device type, OS, and browser manually."
+					icon="solar:smartphone-bold-duotone"
 				>
 					<div className="flex flex-col gap-4">
 						<div className="grid gap-3 sm:grid-cols-2">
@@ -1323,17 +1369,14 @@ export default function EncatchTestPage() {
 								Reset defaults
 							</Button>
 						</div>
-						{deviceInfoResult && (
-							<Text variant="caption" className="text-muted-foreground">
-								{deviceInfoResult}
-							</Text>
-						)}
+						<ResultMessage message={deviceInfoResult} />
 					</div>
 				</Section>
 
 				<Section
 					title="Session: start, pause, resume, stop & resetUser"
-					description="startSession enables ping + URL tracking. pauseSession / resumeSession / stopSession are provided by the loaded Encatch script (see encatch.js). resetUser clears identity; clear device ID forces a new device on reload."
+					description="startSession enables ping + URL tracking. resetUser clears identity."
+					icon="solar:play-circle-bold-duotone"
 				>
 					<div className="flex flex-col gap-2">
 						<div className="flex flex-wrap items-center gap-2">
@@ -1357,17 +1400,12 @@ export default function EncatchTestPage() {
 							</Button>
 						</div>
 						{(sessionResult || sessionRecordingResult || resetUserResult || clearDeviceIdResult) && (
-							<Text variant="caption" className="text-muted-foreground">
-								{[sessionResult, sessionRecordingResult, resetUserResult, clearDeviceIdResult].filter(Boolean).join(" · ")}
-							</Text>
+							<ResultMessage message={[sessionResult, sessionRecordingResult, resetUserResult, clearDeviceIdResult].filter(Boolean).join(" · ")} />
 						)}
 					</div>
 				</Section>
 
-				<Section
-					title="showForm"
-					description="Open a form by configuration ID. Reset mode: always (default), on-complete, or never. Optional context is passed to showForm(options) (string, number, or boolean per value — use JSON literals like addToResponse)."
-				>
+				<Section title="showForm" description="Open a form by ID. Reset mode: always, on-complete, or never." icon="solar:document-bold-duotone">
 					<div className="flex flex-col gap-4">
 						<div className="flex flex-col gap-2 rounded-lg border border-border/50 bg-muted/20 p-3">
 							<div className="flex items-center justify-between gap-2">
@@ -1416,19 +1454,16 @@ export default function EncatchTestPage() {
 									className="flex-1 min-w-[120px]"
 								/>
 								<div className="flex items-center gap-2 shrink-0">
-									<Label htmlFor="reset-mode-1" className="text-muted-foreground text-xs whitespace-nowrap">
-										Reset
-									</Label>
-									<select
-										id="reset-mode-1"
-										className="rounded-md border border-input bg-background px-3 py-2 text-sm w-[130px]"
-										value={resetMode1}
-										onChange={(e) => setResetMode1(e.target.value as ResetMode)}
-									>
-										<option value="always">always</option>
-										<option value="on-complete">on-complete</option>
-										<option value="never">never</option>
-									</select>
+									<Select value={resetMode1} onValueChange={(v) => setResetMode1(v as ResetMode)}>
+										<SelectTrigger className="w-[130px]">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="always">always</SelectItem>
+											<SelectItem value="on-complete">on-complete</SelectItem>
+											<SelectItem value="never">never</SelectItem>
+										</SelectContent>
+									</Select>
 								</div>
 								<Button onClick={handleOpenForm1}>Open form 1</Button>
 							</div>
@@ -1444,32 +1479,25 @@ export default function EncatchTestPage() {
 									className="flex-1 min-w-[120px]"
 								/>
 								<div className="flex items-center gap-2 shrink-0">
-									<Label htmlFor="reset-mode-2" className="text-muted-foreground text-xs whitespace-nowrap">
-										Reset
-									</Label>
-									<select
-										id="reset-mode-2"
-										className="rounded-md border border-input bg-background px-3 py-2 text-sm w-[130px]"
-										value={resetMode2}
-										onChange={(e) => setResetMode2(e.target.value as ResetMode)}
-									>
-										<option value="always">always</option>
-										<option value="on-complete">on-complete</option>
-										<option value="never">never</option>
-									</select>
+									<Select value={resetMode2} onValueChange={(v) => setResetMode2(v as ResetMode)}>
+										<SelectTrigger className="w-[130px]">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="always">always</SelectItem>
+											<SelectItem value="on-complete">on-complete</SelectItem>
+											<SelectItem value="never">never</SelectItem>
+										</SelectContent>
+									</Select>
 								</div>
 								<Button onClick={handleOpenForm2}>Open form 2</Button>
 							</div>
 						</div>
-						{showFormResult && (
-							<Text variant="caption" className="text-muted-foreground">
-								{showFormResult}
-							</Text>
-						)}
+						<ResultMessage message={showFormResult} />
 					</div>
 				</Section>
 
-				<Section title="addToResponse" description="Stage answers by question type, then apply before opening a form.">
+				<Section title="addToResponse" description="Stage answers by question type, then apply before opening a form." icon="solar:pen-new-square-bold-duotone">
 					<AddToResponsePrefillRows
 						rows={prefillRows}
 						onChange={setPrefillRows}
@@ -1479,16 +1507,6 @@ export default function EncatchTestPage() {
 					/>
 				</Section>
 			</div>
-
-			<Section
-				title="init"
-				description="init(apiKey, config) is called once by EncatchProvider on app load. Use the Encatch config section above to set API key and host, then click Initialize SDK (or reload)."
-			>
-				<Text variant="caption" className="text-muted-foreground">
-					Set the Encatch API key and host in the Encatch config section above, then click &quot;Initialize SDK&quot;. If the SDK was already initialized with
-					another key, reload the page to apply a new one.
-				</Text>
-			</Section>
 		</div>
 	);
 }

@@ -1,14 +1,15 @@
-import { Tree } from "antd";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { PERMISSION_LIST } from "@/_mock/assets";
 import { Button } from "@/ui/button";
+import { Checkbox } from "@/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/ui/form";
 import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/ui/radio-group";
+import { ScrollArea } from "@/ui/scroll-area";
 import { Textarea } from "@/ui/textarea";
 import { flattenTrees } from "@/utils/tree";
 
@@ -23,6 +24,26 @@ export type RoleModalProps = {
 	onCancel: VoidFunction;
 };
 const PERMISSIONS: Permission_Old[] = PERMISSION_LIST as Permission_Old[];
+
+function TreeNode({ node, checkedKeys, onToggle, level = 0 }: { node: any; checkedKeys: string[]; onToggle: (id: string) => void; level?: number }) {
+	const isChecked = checkedKeys.includes(node.id);
+	const children = node.children || [];
+
+	return (
+		<div style={{ paddingLeft: `${level * 20}px` }}>
+			<div className="flex items-center gap-2 py-1">
+				<Checkbox checked={isChecked} onCheckedChange={() => onToggle(node.id)} id={`perm-${node.id}`} />
+				<Label htmlFor={`perm-${node.id}`} className="text-sm font-normal cursor-pointer">
+					{node.name}
+				</Label>
+			</div>
+			{children.map((child: any) => (
+				<TreeNode key={child.id} node={child} checkedKeys={checkedKeys} onToggle={onToggle} level={level + 1} />
+			))}
+		</div>
+	);
+}
+
 export function RoleModal({ title, show, formValue, onOk, onCancel }: RoleModalProps) {
 	const form = useForm<Role_Old>({
 		defaultValues: formValue,
@@ -39,12 +60,15 @@ export function RoleModal({ title, show, formValue, onOk, onCancel }: RoleModalP
 		form.reset(formValue);
 	}, [formValue, form]);
 
-	const onCheck = (checked: any) => {
-		setCheckedKeys(checked);
-		form.setValue(
-			"permission",
-			PERMISSIONS.filter((item) => checked.includes(item.id)),
-		);
+	const onToggle = (id: string) => {
+		setCheckedKeys((prev) => {
+			const next = prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id];
+			form.setValue(
+				"permission",
+				PERMISSIONS.filter((item) => next.includes(item.id)),
+			);
+			return next;
+		});
 	};
 
 	return (
@@ -143,21 +167,15 @@ export function RoleModal({ title, show, formValue, onOk, onCancel }: RoleModalP
 							control={form.control}
 							name="permission"
 							render={() => (
-								<FormItem className="grid grid-cols-4 items-center gap-4">
-									<FormLabel className="text-right">Permission</FormLabel>
+								<FormItem className="grid grid-cols-4 items-start gap-4">
+									<FormLabel className="text-right pt-2">Permission</FormLabel>
 									<div className="col-span-3">
 										<FormControl>
-											<Tree
-												checkable
-												checkedKeys={checkedKeys}
-												treeData={PERMISSIONS}
-												fieldNames={{
-													key: "id",
-													children: "children",
-													title: "name",
-												}}
-												onCheck={onCheck}
-											/>
+											<ScrollArea className="h-[200px] rounded-md border p-2">
+												{PERMISSIONS.map((perm) => (
+													<TreeNode key={perm.id} node={perm} checkedKeys={checkedKeys} onToggle={onToggle} />
+												))}
+											</ScrollArea>
 										</FormControl>
 									</div>
 								</FormItem>

@@ -37,6 +37,7 @@ export default {
 				accent: "var(--accent)",
 				accentForeground: "var(--accent-foreground)",
 				destructive: "var(--destructive)",
+				destructiveForeground: "var(--destructive-foreground)",
 				border: "var(--border)",
 				input: "var(--input)",
 				ring: "var(--ring)",

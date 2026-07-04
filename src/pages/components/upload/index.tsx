@@ -32,7 +32,7 @@ export default function UploadPage() {
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<Upload thumbnail={thumbnail} name="multi" />
+					<Upload thumbnail={thumbnail} />
 				</CardContent>
 			</Card>
 			<Card title="Upload Single File">
@@ -45,7 +45,7 @@ export default function UploadPage() {
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<Upload thumbnail={thumbnail} maxCount={1} name="single" />
+					<Upload thumbnail={thumbnail} multiple={false} />
 				</CardContent>
 			</Card>
 		</div>

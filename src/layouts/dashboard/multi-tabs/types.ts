@@ -1,6 +1,4 @@
-import type { MenuProps } from "antd";
 import type { CSSProperties, ReactNode } from "react";
-// types.ts
 import type { RouteMeta } from "#/router";
 
 export type KeepAliveTab = RouteMeta & {
@@ -25,9 +23,4 @@ export type TabItemProps = {
 	style?: CSSProperties;
 	className?: string;
 	onClose?: () => void;
-};
-
-export type TabDropdownProps = {
-	menuItems: MenuProps["items"];
-	menuClick: (menuInfo: any, tab: KeepAliveTab) => void;
 };

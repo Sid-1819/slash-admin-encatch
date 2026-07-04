@@ -1,5 +1,4 @@
-import { CardContent } from "@/ui/card";
-import { Card } from "antd";
+import { Card, CardContent } from "@/ui/card";
 import { format } from "date-fns";
 import { styles } from "./styles";
 
@@ -19,8 +18,8 @@ const truncateText = (text = "", maxLength = 120) => {
 // PostCard component for better organization
 const PostCard = ({ post, onViewDetails, isHovered, onHover, onLeave }: PostCardProps) => (
 	<Card
+		className="relative transition-shadow"
 		style={{
-			position: "relative",
 			...styles.card,
 			...(isHovered ? styles.cardHover : {}),
 		}}

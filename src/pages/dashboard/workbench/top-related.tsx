@@ -3,7 +3,36 @@ import { themeVars } from "@/theme/theme.css";
 import { Badge } from "@/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { ScrollArea } from "@/ui/scroll-area";
-import { Rate } from "antd";
+
+function StarRating({ value, max = 5 }: { value: number; max?: number }) {
+	const stars = Array.from({ length: max }, (_, i) => ({ id: `star-pos-${i}`, filled: value - i }));
+	return (
+		<div className="flex gap-0.5">
+			{stars.map((star) => (
+				<svg
+					key={star.id}
+					width={14}
+					height={14}
+					viewBox="0 0 24 24"
+					fill={star.filled >= 1 ? "#fadb14" : star.filled >= 0.5 ? "url(#half)" : "none"}
+					stroke="#fadb14"
+					strokeWidth={1.5}
+					aria-hidden="true"
+				>
+					{star.filled > 0 && star.filled < 1 && (
+						<defs>
+							<linearGradient id="half">
+								<stop offset="50%" stopColor="#fadb14" />
+								<stop offset="50%" stopColor="transparent" />
+							</linearGradient>
+						</defs>
+					)}
+					<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+				</svg>
+			))}
+		</div>
+	);
+}
 const dataSource = [
 	{
 		logo: <Icon icon="logos:chrome" size={24} />,
@@ -71,18 +100,14 @@ export default function TopRelated() {
 							<div className="flex flex-col">
 								<span className="font-medium">{item.title}</span>
 								<div className="flex items-center justify-center text-gray gap-2">
-									{item.platform === "Mac" ? (
-										<Icon icon="wpf:mac-os" size={12} />
-									) : (
-										<Icon icon="mingcute:windows-fill" size={12} />
-									)}
+									{item.platform === "Mac" ? <Icon icon="wpf:mac-os" size={12} /> : <Icon icon="mingcute:windows-fill" size={12} />}
 									<span className="text-xs font-light">{item.platform}</span>
 									<Badge variant={item.type === "free" ? "success" : "error"}>{item.type}</Badge>
 								</div>
 							</div>
 
 							<div className="ml-auto flex flex-col self-center">
-								<Rate allowHalf disabled defaultValue={item.star} />
+								<StarRating value={item.star} />
 								<span className="mt-1 text-right text-xs text-gray-400">{item.reviews}reviews</span>
 							</div>
 						</div>

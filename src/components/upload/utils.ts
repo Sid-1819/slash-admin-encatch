@@ -1,4 +1,3 @@
-import type { RcFile } from "antd/es/upload";
 import { toast } from "sonner";
 
 // Define more types here
@@ -114,7 +113,7 @@ export function fileTypeByName(fileName = "") {
 	return fileName?.split(".").pop() || "folder";
 }
 
-export function beforeAvatarUpload(file: RcFile) {
+export function beforeAvatarUpload(file: File) {
 	const isJpgOrPng = file.type === "image/jpeg" || file.type === "image/png";
 	if (!isJpgOrPng) {
 		toast.error("You can only upload JPG/PNG file!", {
@@ -130,13 +129,13 @@ export function beforeAvatarUpload(file: RcFile) {
 	return isJpgOrPng && isLt2M;
 }
 
-export function getBase64(img: RcFile, callback: (url: string) => void) {
+export function getBase64(img: File, callback: (url: string) => void) {
 	const reader = new FileReader();
 	reader.addEventListener("load", () => callback(reader.result as string));
 	reader.readAsDataURL(img);
 }
 
-export function getBlobUrl(imgFile: RcFile) {
+export function getBlobUrl(imgFile: File) {
 	const fileBlob = new Blob([imgFile]);
 	const thumbnailUrl = URL.createObjectURL(fileBlob);
 	return thumbnailUrl;

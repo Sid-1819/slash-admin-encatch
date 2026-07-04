@@ -78,7 +78,7 @@ export default defineConfig(({ mode }) => {
 				output: {
 					manualChunks: {
 						"vendor-core": ["react", "react-dom", "react-router"],
-						"vendor-ui": ["antd", "@ant-design/cssinjs", "styled-components"],
+						"vendor-ui": ["radix-ui", "class-variance-authority", "clsx", "tailwind-merge"],
 						"vendor-utils": ["axios", "dayjs", "i18next", "zustand", "@iconify/react"],
 						"vendor-charts": ["apexcharts", "react-apexcharts"],
 					},
@@ -87,7 +87,7 @@ export default defineConfig(({ mode }) => {
 		},
 
 		optimizeDeps: {
-			include: ["react", "react-dom", "react-router", "antd", "axios", "dayjs"],
+			include: ["react", "react-dom", "react-router", "axios", "dayjs"],
 			exclude: ["@iconify/react"],
 		},
 

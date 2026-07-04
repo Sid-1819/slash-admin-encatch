@@ -1,6 +1,5 @@
 import { Icon } from "@/components/icon";
 import { themeVars } from "@/theme/theme.css";
-import { Progress } from "antd";
 
 export function Conversion() {
 	return (
@@ -35,14 +34,42 @@ type Props = {
 	bg?: string;
 	strokeColor?: string;
 };
-function Basic({ percent, title, subtitle, iconify, bg, strokeColor }: Props) {
-	const format = (val?: number) => <span style={{ color: themeVars.colors.background.default }}>{val}%</span>;
+
+function CircularProgress({ percent, size = 70, strokeColor, textColor }: { percent: number; size?: number; strokeColor?: string; textColor?: string }) {
+	const strokeWidth = 6;
+	const radius = (size - strokeWidth) / 2;
+	const circumference = 2 * Math.PI * radius;
+	const offset = circumference - (percent / 100) * circumference;
+
 	return (
-		<div
-			className="relative flex items-center rounded-2xl p-6"
-			style={{ background: bg, color: themeVars.colors.background.default }}
-		>
-			<Progress type="circle" size={70} percent={percent} format={format} strokeColor={strokeColor} />
+		<div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+			<svg width={size} height={size} className="-rotate-90" role="img" aria-label={`${percent}% progress`}>
+				<title>{`${percent}% progress`}</title>
+				<circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={strokeWidth} />
+				<circle
+					cx={size / 2}
+					cy={size / 2}
+					r={radius}
+					fill="none"
+					stroke={strokeColor || "currentColor"}
+					strokeWidth={strokeWidth}
+					strokeDasharray={circumference}
+					strokeDashoffset={offset}
+					strokeLinecap="round"
+					className="transition-all duration-300"
+				/>
+			</svg>
+			<span className="absolute text-sm font-semibold" style={{ color: textColor }}>
+				{percent}%
+			</span>
+		</div>
+	);
+}
+
+function Basic({ percent, title, subtitle, iconify, bg, strokeColor }: Props) {
+	return (
+		<div className="relative flex items-center rounded-2xl p-6" style={{ background: bg, color: themeVars.colors.background.default }}>
+			<CircularProgress percent={percent} strokeColor={strokeColor} textColor={themeVars.colors.background.default} />
 			<div className="ml-2 flex flex-col">
 				<span className="text-2xl font-bold">{title}</span>
 				<span className="opacity-50">{subtitle}</span>

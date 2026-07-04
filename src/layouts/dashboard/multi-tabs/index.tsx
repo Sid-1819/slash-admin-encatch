@@ -1,7 +1,5 @@
 import { useRouter } from "@/routes/hooks";
-import { Tabs } from "antd";
 import { useEffect, useRef } from "react";
-import styled from "styled-components";
 import SortableContainer from "./components/sortable-container";
 import { SortableItem } from "./components/sortable-item";
 import { TabItem } from "./components/tab-item";
@@ -17,8 +15,7 @@ export default function MultiTabs() {
 	const { push } = useRouter();
 
 	const handleTabClick = ({ key }: KeepAliveTab) => {
-		const tabKey = key;
-		push(tabKey);
+		push(key);
 	};
 
 	useEffect(() => {
@@ -59,7 +56,6 @@ export default function MultiTabs() {
 		const newTabs = Array.from(tabs);
 		const [movedTab] = newTabs.splice(oldIndex, 1);
 		newTabs.splice(newIndex, 0, movedTab);
-
 		setTabs([...newTabs]);
 	};
 
@@ -69,64 +65,20 @@ export default function MultiTabs() {
 		return <TabItem tab={tab} />;
 	};
 
+	const activeTab = tabs.find((tab) => tab.key === activeTabRoutePath);
+
 	return (
-		<StyledMultiTabs>
-			<Tabs
-				size="small"
-				type="card"
-				tabBarGutter={4}
-				activeKey={activeTabRoutePath}
-				items={tabs.map((tab) => ({
-					...tab,
-					children: <div key={tab.timeStamp}>{tab.children}</div>,
-				}))}
-				renderTabBar={() => {
-					return (
-						<div style={style}>
-							<SortableContainer items={tabs} onSortEnd={handleDragEnd} renderOverlay={renderOverlay}>
-								<ul ref={scrollContainer} className="flex overflow-x-auto w-full px-2 h-[32px] hide-scrollbar">
-									{tabs.map((tab) => (
-										<SortableItem tab={tab} key={tab.key} onClick={() => handleTabClick(tab)} />
-									))}
-								</ul>
-							</SortableContainer>
-						</div>
-					);
-				}}
-			/>
-		</StyledMultiTabs>
+		<div className="h-full mt-0.5">
+			<div style={style}>
+				<SortableContainer items={tabs} onSortEnd={handleDragEnd} renderOverlay={renderOverlay}>
+					<ul ref={scrollContainer} className="flex overflow-x-auto w-full px-2 h-[32px] hide-scrollbar">
+						{tabs.map((tab) => (
+							<SortableItem tab={tab} key={tab.key} onClick={() => handleTabClick(tab)} />
+						))}
+					</ul>
+				</SortableContainer>
+			</div>
+			<div className="h-[calc(100%-32px)]">{activeTab && <div key={activeTab.timeStamp}>{activeTab.children}</div>}</div>
+		</div>
 	);
 }
-
-const StyledMultiTabs = styled.div`
-  height: 100%;
-  margin-top: 2px;
-  
-  .anticon {
-    margin: 0px !important;
-  }
-  
-  .ant-tabs {
-    height: 100%;
-    .ant-tabs-content {
-      height: 100%;
-    }
-    .ant-tabs-tabpane {
-      height: 100%;
-      & > div {
-        height: 100%;
-      }
-    }
-  }
-
-  .hide-scrollbar {
-    overflow: scroll;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    will-change: transform;
- 
-    &::-webkit-scrollbar {
-      display: none;
-    }
-  }
-`;

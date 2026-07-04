@@ -8,10 +8,9 @@ import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card";
 import { Progress } from "@/ui/progress";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/ui/table";
 import { Text } from "@/ui/typography";
 import { faker } from "@faker-js/faker";
-import { Table, Timeline } from "antd";
-import type { ColumnsType } from "antd/es/table";
 
 interface DataType {
 	key: string;
@@ -23,39 +22,27 @@ interface DataType {
 	status: number;
 }
 
+function TimelineItem({ color, children }: { color: string; children: React.ReactNode }) {
+	return (
+		<div className="relative flex gap-4 pb-6 last:pb-0">
+			<div className="flex flex-col items-center">
+				<div className="h-3 w-3 rounded-full border-2 shrink-0" style={{ borderColor: color, backgroundColor: color }} />
+				<div className="w-px flex-1 bg-border" />
+			</div>
+			<div className="flex-1 pb-2">{children}</div>
+		</div>
+	);
+}
+
 export default function ProfileTab() {
 	const { username } = useUserInfo();
 	const AboutItems = [
-		{
-			icon: <Icon icon="fa-solid:user" size={18} />,
-			label: "Full Name",
-			val: username,
-		},
-		{
-			icon: <Icon icon="eos-icons:role-binding" size={18} />,
-			label: "Role",
-			val: "Developer",
-		},
-		{
-			icon: <Icon icon="tabler:location-filled" size={18} />,
-			label: "Country",
-			val: "USA",
-		},
-		{
-			icon: <Icon icon="ion:language" size={18} />,
-			label: "Language",
-			val: "English",
-		},
-		{
-			icon: <Icon icon="ph:phone-fill" size={18} />,
-			label: "Contact",
-			val: "(123)456-7890",
-		},
-		{
-			icon: <Icon icon="ic:baseline-email" size={18} />,
-			label: "Email",
-			val: username,
-		},
+		{ icon: <Icon icon="fa-solid:user" size={18} />, label: "Full Name", val: username },
+		{ icon: <Icon icon="eos-icons:role-binding" size={18} />, label: "Role", val: "Developer" },
+		{ icon: <Icon icon="tabler:location-filled" size={18} />, label: "Country", val: "USA" },
+		{ icon: <Icon icon="ion:language" size={18} />, label: "Language", val: "English" },
+		{ icon: <Icon icon="ph:phone-fill" size={18} />, label: "Contact", val: "(123)456-7890" },
+		{ icon: <Icon icon="ic:baseline-email" size={18} />, label: "Email", val: username },
 	];
 
 	const ConnectionsItems = [
@@ -65,28 +52,24 @@ export default function ProfileTab() {
 			connections: `${faker.number.int(100)} Connections`,
 			connected: faker.datatype.boolean(),
 		},
-
 		{
 			avatar: faker.image.avatarGitHub(),
 			name: faker.person.fullName(),
 			connections: `${faker.number.int(100)} Connections`,
 			connected: faker.datatype.boolean(),
 		},
-
 		{
 			avatar: faker.image.avatarGitHub(),
 			name: faker.person.fullName(),
 			connections: `${faker.number.int(100)} Connections`,
 			connected: faker.datatype.boolean(),
 		},
-
 		{
 			avatar: faker.image.avatarGitHub(),
 			name: faker.person.fullName(),
 			connections: `${faker.number.int(100)} Connections`,
 			connected: faker.datatype.boolean(),
 		},
-
 		{
 			avatar: faker.image.avatarGitHub(),
 			name: faker.person.fullName(),
@@ -120,7 +103,6 @@ export default function ProfileTab() {
 			members: `${faker.number.int(100)} Members`,
 			tag: <Badge variant="warning">Developer</Badge>,
 		},
-
 		{
 			avatar: <Icon icon="logos:twitter" size={36} />,
 			name: "Digital Marketing",
@@ -144,54 +126,6 @@ export default function ProfileTab() {
 		}
 		return arr;
 	};
-
-	const ProjectColumns: ColumnsType<DataType> = [
-		{
-			title: "NAME",
-			dataIndex: "name",
-			render: (_, record) => (
-				<div className="flex items-center">
-					<img src={record.avatar} alt="" className="h-8 w-8 rounded-full" />
-					<div className="ml-2 flex flex-col">
-						<span className="font-semibold">{record.name}</span>
-						<span className="text-xs opacity-50">{record.date}</span>
-					</div>
-				</div>
-			),
-		},
-		{
-			title: "LEADER",
-			dataIndex: "leader",
-			render: (val) => <span className="opacity-50">{val}</span>,
-		},
-		{
-			title: "TEAM",
-			dataIndex: "team",
-			render: (val: string[]) => (
-				<AvatarGroup max={3}>
-					{val.map((item) => (
-						<Avatar key={item}>
-							<AvatarImage src={item} />
-						</Avatar>
-					))}
-				</AvatarGroup>
-			),
-		},
-		{
-			title: "STATUS",
-			dataIndex: "status",
-			render: (val) => <Progress value={val} />,
-		},
-		{
-			title: "ACTIONS",
-			dataIndex: "action",
-			render: () => (
-				<Button variant="ghost" size="icon">
-					<Icon icon="fontisto:more-v-a" />
-				</Button>
-			),
-		},
-	];
 
 	return (
 		<>
@@ -222,73 +156,57 @@ export default function ProfileTab() {
 							<CardTitle>Activity Timeline</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<Timeline
-								className="mt-4! w-full"
-								items={[
-									{
-										color: themeVars.colors.palette.error.default,
-										children: (
-											<div className="flex flex-col">
-												<div className="flex items-center justify-between">
-													<Text>8 Invoices have been paid</Text>
-													<div className="opacity-50">Wednesday</div>
-												</div>
-												<Text variant="caption" color="secondary">
-													Invoices have been paid to the company.
-												</Text>
-
-												<div className="mt-2 flex items-center gap-2">
-													<Icon icon="local:file-pdf" size={30} />
-													<span className="font-medium opacity-60">invoice.pdf</span>
-												</div>
-											</div>
-										),
-									},
-									{
-										color: themeVars.colors.palette.primary.default,
-										children: (
-											<div className="flex flex-col">
-												<div className="flex items-center justify-between">
-													<Text>Create a new project for client 😎</Text>
-													<div className="opacity-50">April, 18</div>
-												</div>
-												<Text variant="caption" color="secondary">
-													Invoices have been paid to the company.
-												</Text>
-												<div className="mt-2 flex items-center gap-2">
-													<img alt="" src={faker.image.avatarGitHub()} className="h-8 w-8 rounded-full" />
-													<span className="font-medium opacity-60">{faker.person.fullName()} (client)</span>
-												</div>
-											</div>
-										),
-									},
-									{
-										color: themeVars.colors.palette.info.default,
-										children: (
-											<div className="flex flex-col">
-												<div className="flex items-center justify-between">
-													<Text>Order #37745 from September</Text>
-													<div className="opacity-50">January, 10</div>
-												</div>
-												<Text variant="caption" color="secondary">
-													Invoices have been paid to the company.
-												</Text>
-											</div>
-										),
-									},
-									{
-										color: themeVars.colors.palette.warning.default,
-										children: (
-											<div className="flex flex-col">
-												<div className="flex items-center justify-between">
-													<Text>Public Meeting</Text>
-													<div className="opacity-50">September, 30</div>
-												</div>
-											</div>
-										),
-									},
-								]}
-							/>
+							<div className="mt-4">
+								<TimelineItem color={themeVars.colors.palette.error.default}>
+									<div className="flex flex-col">
+										<div className="flex items-center justify-between">
+											<Text>8 Invoices have been paid</Text>
+											<div className="opacity-50">Wednesday</div>
+										</div>
+										<Text variant="caption" color="secondary">
+											Invoices have been paid to the company.
+										</Text>
+										<div className="mt-2 flex items-center gap-2">
+											<Icon icon="local:file-pdf" size={30} />
+											<span className="font-medium opacity-60">invoice.pdf</span>
+										</div>
+									</div>
+								</TimelineItem>
+								<TimelineItem color={themeVars.colors.palette.primary.default}>
+									<div className="flex flex-col">
+										<div className="flex items-center justify-between">
+											<Text>Create a new project for client 😎</Text>
+											<div className="opacity-50">April, 18</div>
+										</div>
+										<Text variant="caption" color="secondary">
+											Invoices have been paid to the company.
+										</Text>
+										<div className="mt-2 flex items-center gap-2">
+											<img alt="" src={faker.image.avatarGitHub()} className="h-8 w-8 rounded-full" />
+											<span className="font-medium opacity-60">{faker.person.fullName()} (client)</span>
+										</div>
+									</div>
+								</TimelineItem>
+								<TimelineItem color={themeVars.colors.palette.info.default}>
+									<div className="flex flex-col">
+										<div className="flex items-center justify-between">
+											<Text>Order #37745 from September</Text>
+											<div className="opacity-50">January, 10</div>
+										</div>
+										<Text variant="caption" color="secondary">
+											Invoices have been paid to the company.
+										</Text>
+									</div>
+								</TimelineItem>
+								<TimelineItem color={themeVars.colors.palette.warning.default}>
+									<div className="flex flex-col">
+										<div className="flex items-center justify-between">
+											<Text>Public Meeting</Text>
+											<div className="opacity-50">September, 30</div>
+										</div>
+									</div>
+								</TimelineItem>
+							</div>
 						</CardContent>
 					</Card>
 				</div>
@@ -320,11 +238,7 @@ export default function ProfileTab() {
 												border: item.connected ? "" : `1px solid ${themeVars.colors.palette.primary.default}`,
 											}}
 										>
-											<Icon
-												icon="tdesign:user"
-												color={item.connected ? "#fff" : themeVars.colors.palette.primary.default}
-												size={20}
-											/>
+											<Icon icon="tdesign:user" color={item.connected ? "#fff" : themeVars.colors.palette.primary.default} size={20} />
 										</div>
 									</div>
 								))}
@@ -366,7 +280,52 @@ export default function ProfileTab() {
 							<CardTitle>Projects</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<Table rowSelection={{ type: "checkbox" }} columns={ProjectColumns} dataSource={fakeProjectItems()} />
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>NAME</TableHead>
+										<TableHead>LEADER</TableHead>
+										<TableHead>TEAM</TableHead>
+										<TableHead>STATUS</TableHead>
+										<TableHead>ACTIONS</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{fakeProjectItems().map((record) => (
+										<TableRow key={record.key}>
+											<TableCell>
+												<div className="flex items-center">
+													<img src={record.avatar} alt="" className="h-8 w-8 rounded-full" />
+													<div className="ml-2 flex flex-col">
+														<span className="font-semibold">{record.name}</span>
+														<span className="text-xs opacity-50">{record.date}</span>
+													</div>
+												</div>
+											</TableCell>
+											<TableCell>
+												<span className="opacity-50">{record.leader}</span>
+											</TableCell>
+											<TableCell>
+												<AvatarGroup max={3}>
+													{record.team.map((item) => (
+														<Avatar key={item}>
+															<AvatarImage src={item} />
+														</Avatar>
+													))}
+												</AvatarGroup>
+											</TableCell>
+											<TableCell>
+												<Progress value={record.status} />
+											</TableCell>
+											<TableCell>
+												<Button variant="ghost" size="icon">
+													<Icon icon="fontisto:more-v-a" />
+												</Button>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
 						</CardContent>
 					</Card>
 				</div>
