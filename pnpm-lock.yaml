@@ -18,7 +18,7 @@ importers:
         specifier: ^3.2.2
         version: 3.2.2(react@19.2.7)
       '@encatch/web-sdk':
-        specifier: 1.4.1-beta.1
+        specifier: ^1.4.1-beta.1
         version: 1.4.1-beta.1
       '@fontsource-variable/inter':
         specifier: ^5.1.0
