@@ -12,6 +12,8 @@ export const ENCATCH_STORAGE_KEYS = {
 	API_KEY: "encatch_api_key",
 	/** JSON map of host URL → API key (dev / uat / prod). */
 	API_KEYS_BY_HOST: "encatch_api_keys_by_host",
+	/** JSON map of custom webHost URL → apiBaseUrl override. */
+	API_BASE_URL_BY_HOST: "encatch_api_base_url_by_host",
 	HOST: "encatch_host",
 	FEEDBACK_FORM_ID_1: "encatch_feedback_form_id_1",
 	FEEDBACK_FORM_ID_2: "encatch_feedback_form_id_2",
@@ -53,6 +55,12 @@ export const ENCATCH_HOST_OPTIONS = [
 	{ value: "https://form.encatch.com", label: "form.encatch.com" },
 ] as const;
 
+/** Label shown in UI when a non-preset host is selected. */
+export const ENCATCH_CUSTOM_DOMAIN_LABEL = "Custom domain";
+
+/** Select value used when the Encatch host is not a preset environment. */
+export const ENCATCH_CUSTOM_SELECT_VALUE = "__custom__";
+
 function getStored(key: string): string {
 	if (typeof window === "undefined" || typeof localStorage === "undefined") return "";
 	try {
@@ -85,6 +93,43 @@ function getApiKeysByHostMap(): Record<string, string> {
 	} catch {
 		return {};
 	}
+}
+
+function getApiBaseUrlByHostMap(): Record<string, string> {
+	try {
+		const raw = getStored(ENCATCH_STORAGE_KEYS.API_BASE_URL_BY_HOST);
+		if (!raw) return {};
+		const parsed = JSON.parse(raw) as unknown;
+		if (!parsed || typeof parsed !== "object") return {};
+		const out: Record<string, string> = {};
+		for (const [host, value] of Object.entries(parsed as Record<string, unknown>)) {
+			if (typeof value === "string") out[host] = value;
+		}
+		return out;
+	} catch {
+		return {};
+	}
+}
+
+/** Normalize a form or API host URL (adds https://, strips path/trailing slash). */
+export function normalizeEncatchHostUrl(input: string): string | null {
+	const trimmed = input.trim();
+	if (!trimmed) return null;
+	try {
+		const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+		const url = new URL(withScheme);
+		if (!url.hostname) return null;
+		return `${url.protocol}//${url.hostname}`.replace(/\/+$/, "");
+	} catch {
+		return null;
+	}
+}
+
+/** True when the host matches a built-in dev / uat / prod option. */
+export function isEncatchPresetHost(host: string): boolean {
+	const normalized = normalizeEncatchHostUrl(host);
+	if (!normalized) return false;
+	return ENCATCH_HOST_OPTIONS.some((opt) => opt.value === normalized);
 }
 
 /** One saved API key tied to a host environment. */
@@ -133,7 +178,32 @@ export function formatEncatchSavedApiKeyLabel(entry: EncatchSavedApiKeyEntry): s
 /** Human-readable host label (e.g. form-uat.encatch.com). */
 export function getEncatchHostLabel(host?: string): string {
 	const h = (host ?? getEncatchHost()).trim();
-	return ENCATCH_HOST_OPTIONS.find((opt) => opt.value === h)?.label ?? h;
+	if (isEncatchPresetHost(h)) {
+		return ENCATCH_HOST_OPTIONS.find((opt) => opt.value === h)?.label ?? h;
+	}
+	try {
+		return new URL(h).hostname;
+	} catch {
+		return h || ENCATCH_CUSTOM_DOMAIN_LABEL;
+	}
+}
+
+/** Stored apiBaseUrl override for a custom webHost (empty when unset). */
+export function getEncatchApiBaseUrlOverride(webHost: string): string {
+	return getApiBaseUrlByHostMap()[webHost.trim()]?.trim() ?? "";
+}
+
+/** Persist apiBaseUrl override for a custom webHost. Pass empty string to clear. */
+export function setEncatchApiBaseUrlForHost(webHost: string, apiBaseUrl: string): void {
+	const trimmedHost = webHost.trim();
+	const normalizedApi = apiBaseUrl.trim() ? normalizeEncatchHostUrl(apiBaseUrl) : null;
+	const map = getApiBaseUrlByHostMap();
+	if (normalizedApi) {
+		map[trimmedHost] = normalizedApi;
+	} else {
+		delete map[trimmedHost];
+	}
+	setStored(ENCATCH_STORAGE_KEYS.API_BASE_URL_BY_HOST, JSON.stringify(map));
 }
 
 /** API key saved for a specific host (dev / uat / prod). Falls back to legacy single key. */
@@ -189,6 +259,8 @@ const ENCATCH_FORM_API_BASE_URL: Record<string, string> = {
  * apiBaseUrl for init(). Form hosts map to api.*; local dev uses the app origin so Vite can proxy.
  */
 export function getEncatchApiBaseUrl(webHost: string): string | undefined {
+	const override = getEncatchApiBaseUrlOverride(webHost);
+	if (override) return override;
 	try {
 		const mapped = ENCATCH_FORM_API_BASE_URL[new URL(webHost).hostname];
 		if (mapped) {

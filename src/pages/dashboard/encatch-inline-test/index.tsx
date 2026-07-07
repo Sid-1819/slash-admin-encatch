@@ -1,11 +1,15 @@
 import { Icon } from "@/components/icon";
 import {
+	ENCATCH_CUSTOM_DOMAIN_LABEL,
+	ENCATCH_CUSTOM_SELECT_VALUE,
 	ENCATCH_DEFAULT_HOST,
 	ENCATCH_HOST_OPTIONS,
 	ENCATCH_STORAGE_KEYS,
 	type EncatchSavedApiKeyEntry,
 	formatEncatchApiKeyPreview,
 	formatEncatchSavedApiKeyLabel,
+	getEncatchApiBaseUrl,
+	getEncatchApiBaseUrlOverride,
 	getEncatchApiKeyForHost,
 	getEncatchFeedbackFormId1,
 	getEncatchFeedbackFormId2,
@@ -13,6 +17,9 @@ import {
 	getEncatchInitOrigin,
 	getEncatchSavedApiKeyEntries,
 	initEncatch,
+	isEncatchPresetHost,
+	normalizeEncatchHostUrl,
+	setEncatchApiBaseUrlForHost,
 	setEncatchApiKeyForHost,
 	_encatch,
 } from "@/lib/encatch";
@@ -489,6 +496,9 @@ export default function EncatchInlineTestPage() {
 	const [mountKey, setMountKey] = useState(0);
 	const [encatchApiKey, setEncatchApiKey] = useState("");
 	const [encatchHost, setEncatchHost] = useState(ENCATCH_DEFAULT_HOST);
+	const [hostMode, setHostMode] = useState<"preset" | "custom">("preset");
+	const [customFormHost, setCustomFormHost] = useState("");
+	const [customApiBaseUrl, setCustomApiBaseUrl] = useState("");
 	const [savedApiKeyEntries, setSavedApiKeyEntries] = useState<EncatchSavedApiKeyEntry[]>([]);
 	const [initResult, setInitResult] = useState<string | null>(null);
 
@@ -628,7 +638,13 @@ export default function EncatchInlineTestPage() {
 		try {
 			const storedHost = localStorage.getItem(ENCATCH_STORAGE_KEYS.HOST)?.trim() ?? "";
 			const host = storedHost || ENCATCH_DEFAULT_HOST;
+			const isCustom = !isEncatchPresetHost(host);
+			setHostMode(isCustom ? "custom" : "preset");
 			setEncatchHost(host);
+			if (isCustom) {
+				setCustomFormHost(host);
+				setCustomApiBaseUrl(getEncatchApiBaseUrlOverride(host) || getEncatchApiBaseUrl(host) || "");
+			}
 			setEncatchApiKey(getEncatchApiKeyForHost(host));
 			setSavedApiKeyEntries(getEncatchSavedApiKeyEntries());
 			if (_encatch._initialized) {
@@ -656,10 +672,47 @@ export default function EncatchInlineTestPage() {
 		}
 	}, [formUuid, formSlug, identifierMode, mismatchId]);
 
-	const handleEncatchHostChange = (newHost: string) => {
-		if (encatchApiKey.trim()) {
-			setEncatchApiKeyForHost(encatchHost, encatchApiKey);
+	const persistCurrentEncatchConfig = () => {
+		if (hostMode === "custom") {
+			const normalizedHost = normalizeEncatchHostUrl(customFormHost);
+			if (!normalizedHost) {
+				throw new Error("Enter a valid custom form host (e.g. feedback.example.com).");
+			}
+			const normalizedApi = customApiBaseUrl.trim() ? normalizeEncatchHostUrl(customApiBaseUrl) : null;
+			if (customApiBaseUrl.trim() && !normalizedApi) {
+				throw new Error("Enter a valid custom API base URL or leave it blank to use the form host.");
+			}
+			setCustomFormHost(normalizedHost);
+			setEncatchHost(normalizedHost);
+			setEncatchApiBaseUrlForHost(normalizedHost, normalizedApi ?? "");
+			if (encatchApiKey.trim()) {
+				setEncatchApiKeyForHost(normalizedHost, encatchApiKey.trim());
+			}
+			return normalizedHost;
 		}
+		if (encatchApiKey.trim()) {
+			setEncatchApiKeyForHost(encatchHost, encatchApiKey.trim());
+		}
+		return encatchHost;
+	};
+
+	const handleEncatchHostChange = (newHost: string) => {
+		try {
+			persistCurrentEncatchConfig();
+		} catch {
+			// Best effort before switching hosts.
+		}
+		if (newHost === ENCATCH_CUSTOM_SELECT_VALUE) {
+			setHostMode("custom");
+			const normalizedHost = normalizeEncatchHostUrl(customFormHost);
+			if (normalizedHost) {
+				setEncatchHost(normalizedHost);
+				setEncatchApiKey(getEncatchApiKeyForHost(normalizedHost));
+			}
+			setSavedApiKeyEntries(getEncatchSavedApiKeyEntries());
+			return;
+		}
+		setHostMode("preset");
 		setEncatchHost(newHost);
 		setEncatchApiKey(getEncatchApiKeyForHost(newHost));
 		setSavedApiKeyEntries(getEncatchSavedApiKeyEntries());
@@ -668,30 +721,38 @@ export default function EncatchInlineTestPage() {
 	const handleSavedApiKeySelect = (host: string) => {
 		const entry = savedApiKeyEntries.find((item) => item.host === host);
 		if (!entry) return;
+		const isCustom = !isEncatchPresetHost(entry.host);
+		setHostMode(isCustom ? "custom" : "preset");
 		setEncatchHost(entry.host);
+		if (isCustom) {
+			setCustomFormHost(entry.host);
+			setCustomApiBaseUrl(getEncatchApiBaseUrlOverride(entry.host) || getEncatchApiBaseUrl(entry.host) || "");
+		}
 		setEncatchApiKey(entry.apiKey);
 		setEncatchApiKeyForHost(entry.host, entry.apiKey);
 	};
 
 	const saveEncatchConfig = () => {
 		try {
-			setEncatchApiKeyForHost(encatchHost, encatchApiKey.trim());
+			const activeHost = persistCurrentEncatchConfig();
+			setEncatchApiKeyForHost(activeHost, encatchApiKey.trim());
 			setSavedApiKeyEntries(getEncatchSavedApiKeyEntries());
-			toast.success(`Encatch config saved for ${getEncatchHostLabel(encatchHost)}. Click Initialize SDK or reload to apply.`);
-		} catch {
-			toast.error("Failed to save Encatch config.");
+			toast.success(`Encatch config saved for ${getEncatchHostLabel(activeHost)}. Click Initialize SDK or reload to apply.`);
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : "Failed to save Encatch config.");
 		}
 	};
 
 	const handleInitializeSdk = () => {
 		setInitResult(null);
 		try {
+			const activeHost = persistCurrentEncatchConfig();
 			const key = encatchApiKey.trim();
-			setEncatchApiKeyForHost(encatchHost, key);
+			setEncatchApiKeyForHost(activeHost, key);
 			setSavedApiKeyEntries(getEncatchSavedApiKeyEntries());
 			const currentSdkHost = _encatch._initialized ? _encatch._config?.webHost : undefined;
 			const currentSdkKey = _encatch._apiKey;
-			const needsForce = _encatch._initialized && (currentSdkHost !== encatchHost || currentSdkKey !== key);
+			const needsForce = _encatch._initialized && (currentSdkHost !== activeHost || currentSdkKey !== key);
 			const result = initEncatch(needsForce);
 			if (result.status === "initialized") {
 				setInitResult(`SDK initialized → ${result.hostLabel} (${result.host})`);
@@ -704,8 +765,9 @@ export default function EncatchInlineTestPage() {
 				toast.error(result.message);
 			}
 		} catch (e) {
-			setInitResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
-			toast.error("Failed to initialize SDK.");
+			const msg = e instanceof Error ? e.message : String(e);
+			setInitResult(`Error: ${msg}`);
+			toast.error(msg || "Failed to initialize SDK.");
 		}
 	};
 
@@ -726,7 +788,7 @@ export default function EncatchInlineTestPage() {
 				</div>
 			</div>
 
-			<Section title="Encatch config" description="Pick an environment, enter its API key, then save or initialize.">
+			<Section title="Encatch config" description="Pick an environment or custom domain, enter its API key, then save or initialize.">
 				<div className="flex flex-col gap-5">
 					{initResult && (
 						<div className="rounded-lg border border-border bg-muted/50 px-4 py-3">
@@ -739,7 +801,7 @@ export default function EncatchInlineTestPage() {
 					<div className="grid gap-4 md:grid-cols-2">
 						<div className="flex flex-col gap-1.5">
 							<Label htmlFor="encatch-host">Environment</Label>
-							<Select value={encatchHost} onValueChange={handleEncatchHostChange}>
+							<Select value={hostMode === "custom" ? ENCATCH_CUSTOM_SELECT_VALUE : encatchHost} onValueChange={handleEncatchHostChange}>
 								<SelectTrigger id="encatch-host" className="w-full">
 									<SelectValue placeholder="Select environment" />
 								</SelectTrigger>
@@ -749,6 +811,7 @@ export default function EncatchInlineTestPage() {
 											{opt.label}
 										</SelectItem>
 									))}
+									<SelectItem value={ENCATCH_CUSTOM_SELECT_VALUE}>{ENCATCH_CUSTOM_DOMAIN_LABEL}</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
@@ -757,7 +820,7 @@ export default function EncatchInlineTestPage() {
 							<Input
 								id="encatch-api-key"
 								type="text"
-								placeholder={`Key for ${getEncatchHostLabel(encatchHost)}`}
+								placeholder={`Key for ${getEncatchHostLabel(hostMode === "custom" ? customFormHost || encatchHost : encatchHost)}`}
 								value={encatchApiKey}
 								onChange={(e) => setEncatchApiKey(e.target.value)}
 								autoComplete="off"
@@ -765,6 +828,39 @@ export default function EncatchInlineTestPage() {
 							/>
 						</div>
 					</div>
+
+					{hostMode === "custom" && (
+						<div className="grid gap-4 rounded-lg border border-dashed border-border bg-muted/20 p-4 md:grid-cols-2">
+							<div className="flex flex-col gap-1.5">
+								<Label htmlFor="encatch-custom-form-host" className="text-xs">
+									Form host (webHost)
+								</Label>
+								<Input
+									id="encatch-custom-form-host"
+									type="text"
+									placeholder="https://feedback.example.com"
+									value={customFormHost}
+									onChange={(e) => setCustomFormHost(e.target.value)}
+									autoComplete="off"
+									className="font-mono text-xs"
+								/>
+							</div>
+							<div className="flex flex-col gap-1.5">
+								<Label htmlFor="encatch-custom-api-base-url" className="text-xs">
+									API base URL (optional)
+								</Label>
+								<Input
+									id="encatch-custom-api-base-url"
+									type="text"
+									placeholder="https://api.example.com"
+									value={customApiBaseUrl}
+									onChange={(e) => setCustomApiBaseUrl(e.target.value)}
+									autoComplete="off"
+									className="font-mono text-xs"
+								/>
+							</div>
+						</div>
+					)}
 
 					{savedApiKeyEntries.length > 0 && (
 						<div className="flex flex-col gap-2">
