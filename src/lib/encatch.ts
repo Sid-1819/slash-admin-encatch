@@ -37,6 +37,8 @@ export const ENCATCH_TEST_STORAGE_KEYS = {
 	RESET_MODE_2: "encatch_test_reset_mode_2",
 	/** JSON array of { key, value } for showForm context (encatch-test page). */
 	SHOW_FORM_CONTEXT_ROWS: "encatch_test_show_form_context_rows",
+	/** JSON array of { key, value } for addSourceTracking (encatch-test page). */
+	SOURCE_TRACKING_ROWS: "encatch_test_source_tracking_rows",
 	/** JSON array of { questionId, questionType, value } for addToResponse (encatch-test page). */
 	PREFILL_ROWS: "encatch_test_prefill_rows",
 	/** @deprecated Migrated into PREFILL_ROWS on load */

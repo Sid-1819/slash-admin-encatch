@@ -172,6 +172,22 @@ function loadShowFormContextRowsFromStorage(): KeyValueRow[] {
 	}
 }
 
+const DEFAULT_SOURCE_TRACKING_ROWS: KeyValue[] = [
+	{ key: "utm_source", value: "slash-admin" },
+	{ key: "utm_campaign", value: "test_campaign" },
+	{ key: "utm_medium", value: "manual" },
+];
+
+function loadSourceTrackingRowsFromStorage(): KeyValueRow[] {
+	try {
+		const rows = parseKeyValueRowsFromJson(getTestStored(ENCATCH_TEST_STORAGE_KEYS.SOURCE_TRACKING_ROWS));
+		if (rows.length > 0) return rows;
+	} catch {
+		// fall through
+	}
+	return DEFAULT_SOURCE_TRACKING_ROWS.map((row) => ({ ...row, id: crypto.randomUUID() }));
+}
+
 function loadPrefillRowsFromStorage(): AddToResponsePrefillRow[] {
 	try {
 		const fromRows = parseAddToResponsePrefillRows(getTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_ROWS));
@@ -259,6 +275,8 @@ export default function EncatchTestPage() {
 	const [resetMode1, setResetMode1] = useState<ResetMode>(() => (getTestStored(ENCATCH_TEST_STORAGE_KEYS.RESET_MODE_1) as ResetMode) || "always");
 	const [resetMode2, setResetMode2] = useState<ResetMode>(() => (getTestStored(ENCATCH_TEST_STORAGE_KEYS.RESET_MODE_2) as ResetMode) || "always");
 	const [showFormContextRows, setShowFormContextRows] = useState<KeyValueRow[]>(() => loadShowFormContextRowsFromStorage());
+	const [sourceTrackingRows, setSourceTrackingRows] = useState<KeyValueRow[]>(() => loadSourceTrackingRowsFromStorage());
+	const [sourceTrackingResult, setSourceTrackingResult] = useState<string | null>(null);
 	const [showFormResult, setShowFormResult] = useState<string | null>(null);
 
 	// addToResponse
@@ -383,6 +401,7 @@ export default function EncatchTestPage() {
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.RESET_MODE_1, resetMode1);
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.RESET_MODE_2, resetMode2);
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.SHOW_FORM_CONTEXT_ROWS, JSON.stringify(showFormContextRows.map(({ key, value }) => ({ key, value }))));
+		setTestStored(ENCATCH_TEST_STORAGE_KEYS.SOURCE_TRACKING_ROWS, JSON.stringify(sourceTrackingRows.map(({ key, value }) => ({ key, value }))));
 		setTestStored(ENCATCH_TEST_STORAGE_KEYS.PREFILL_ROWS, serializeAddToResponsePrefillRows(prefillRows));
 	}, [
 		identifyUserName,
@@ -398,6 +417,7 @@ export default function EncatchTestPage() {
 		resetMode1,
 		resetMode2,
 		showFormContextRows,
+		sourceTrackingRows,
 		prefillRows,
 	]);
 
@@ -531,6 +551,56 @@ export default function EncatchTestPage() {
 	function removeShowFormContextRow(index: number) {
 		setShowFormContextRows((prev) => prev.filter((_, i) => i !== index));
 	}
+
+	function addSourceTrackingRow() {
+		setSourceTrackingRows((prev) => [...prev, { key: "", value: "", id: crypto.randomUUID() }]);
+	}
+	function updateSourceTrackingRow(index: number, field: "key" | "value", val: string) {
+		setSourceTrackingRows((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: val } : p)));
+	}
+	function removeSourceTrackingRow(index: number) {
+		setSourceTrackingRows((prev) => prev.filter((_, i) => i !== index));
+	}
+	function fillSourceTrackingPreset() {
+		setSourceTrackingRows(DEFAULT_SOURCE_TRACKING_ROWS.map((row) => ({ ...row, id: crypto.randomUUID() })));
+	}
+
+	function buildSourceTrackingValues(rows: KeyValueRow[]): Record<string, string> | undefined {
+		const values: Record<string, string> = {};
+		for (const { key, value } of rows) {
+			const k = key.trim();
+			if (!k) continue;
+			values[k] = value;
+		}
+		return Object.keys(values).length > 0 ? values : undefined;
+	}
+
+	function applySourceTrackingFromRows(): Record<string, string> | undefined {
+		const values = buildSourceTrackingValues(sourceTrackingRows);
+		if (!values) return undefined;
+		_encatch.addSourceTracking(values);
+		return values;
+	}
+
+	const handleAddSourceTracking = () => {
+		setSourceTrackingResult(null);
+		try {
+			const values = applySourceTrackingFromRows();
+			if (!values) {
+				const msg = "Add at least one key/value pair";
+				setSourceTrackingResult(msg);
+				toast.error(msg);
+				return;
+			}
+			const msg = `addSourceTracking: ${JSON.stringify(values)}`;
+			setSourceTrackingResult(msg);
+			toast.success(msg);
+		} catch (e) {
+			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+			setSourceTrackingResult(msg);
+			toast.error(msg);
+		}
+	};
 
 	const handleSetTheme = () => {
 		setThemeResult(null);
@@ -742,9 +812,11 @@ export default function EncatchTestPage() {
 				toast.error(msg);
 				return;
 			}
+			const sourceTracking = applySourceTrackingFromRows();
 			_encatch.showForm(formId, { reset: resetMode1, ...(context ? { context } : {}) });
 			const ctxMsg = context ? `, context=${JSON.stringify(context)}` : "";
-			const msg = `showForm: ${formId} (reset=${resetMode1}${ctxMsg})`;
+			const stMsg = sourceTracking ? `, sourceTracking=${JSON.stringify(sourceTracking)}` : "";
+			const msg = `showForm: ${formId} (reset=${resetMode1}${ctxMsg}${stMsg})`;
 			setShowFormResult(msg);
 			toast.success(msg);
 		} catch (e) {
@@ -765,9 +837,11 @@ export default function EncatchTestPage() {
 				toast.error(msg);
 				return;
 			}
+			const sourceTracking = applySourceTrackingFromRows();
 			_encatch.showForm(formId, { reset: resetMode2, ...(context ? { context } : {}) });
 			const ctxMsg = context ? `, context=${JSON.stringify(context)}` : "";
-			const msg = `showForm: ${formId} (reset=${resetMode2}${ctxMsg})`;
+			const stMsg = sourceTracking ? `, sourceTracking=${JSON.stringify(sourceTracking)}` : "";
+			const msg = `showForm: ${formId} (reset=${resetMode2}${ctxMsg}${stMsg})`;
 			setShowFormResult(msg);
 			toast.success(msg);
 		} catch (e) {
@@ -973,6 +1047,7 @@ export default function EncatchTestPage() {
 			setResetMode1("always");
 			setResetMode2("always");
 			setShowFormContextRows([]);
+			setSourceTrackingRows(DEFAULT_SOURCE_TRACKING_ROWS.map((row) => ({ ...row, id: crypto.randomUUID() })));
 			setPrefillRows([newAddToResponsePrefillRow()]);
 			refreshSavedApiKeyEntries();
 			toast.success("Cleared local/session/IndexedDB; API key, host, and saved keys kept.");
@@ -1473,6 +1548,56 @@ export default function EncatchTestPage() {
 				</Section>
 
 				<div className="flex flex-col gap-4">
+					<Section
+						title="addSourceTracking"
+						description="Merge UTM/campaign params before showForm. Values override URL query params. Also applied automatically when you open a form."
+						icon="solar:link-bold-duotone"
+					>
+						<div className="flex flex-col gap-3">
+							<div className="flex flex-wrap items-center gap-2">
+								<Button type="button" variant="outline" size="sm" onClick={fillSourceTrackingPreset}>
+									Fill test UTM preset
+								</Button>
+								<Button type="button" variant="outline" size="sm" onClick={addSourceTrackingRow}>
+									Add row
+								</Button>
+							</div>
+							{sourceTrackingRows.length === 0 ? (
+								<Text variant="caption" className="text-muted-foreground">
+									No params configured. Add rows or use the test preset (utm_source, utm_campaign, utm_medium).
+								</Text>
+							) : (
+								<div className="flex flex-col gap-2">
+									{sourceTrackingRows.map((row, i) => (
+										<div key={row.id} className="flex flex-wrap gap-2">
+											<Input
+												placeholder="utm_source"
+												value={row.key}
+												onChange={(e) => updateSourceTrackingRow(i, "key", e.target.value)}
+												className="font-mono text-sm min-w-[120px] flex-1"
+											/>
+											<Input
+												placeholder="slash-admin"
+												value={row.value}
+												onChange={(e) => updateSourceTrackingRow(i, "value", e.target.value)}
+												className="font-mono text-sm min-w-[140px] flex-[2]"
+											/>
+											<Button type="button" variant="ghost" size="sm" onClick={() => removeSourceTrackingRow(i)}>
+												Remove
+											</Button>
+										</div>
+									))}
+								</div>
+							)}
+							<div className="flex flex-wrap items-center gap-2">
+								<Button onClick={handleAddSourceTracking} disabled={!sourceTrackingRows.some((row) => row.key.trim())}>
+									Apply source tracking
+								</Button>
+							</div>
+							<ResultMessage message={sourceTrackingResult} />
+						</div>
+					</Section>
+
 					<Section title="showForm" description="Open a form by ID. Reset mode: always, on-complete, or never." icon="solar:document-bold-duotone">
 						<div className="flex flex-col gap-4">
 							<div className="flex flex-col gap-2">

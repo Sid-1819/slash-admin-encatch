@@ -24,6 +24,7 @@ Manual, user-perspective test scenarios for the Encatch test page (`/dashboard/e
 | 13  | Prefill while form is open    | addToResponse updates already-open form     | addToResponse, showForm           |
 | 14  | Multiple identify then reset  | Switch from one user to another             | identifyUser, resetUser, showForm |
 | 15  | Invalid form ID               | Graceful handling when form cannot load     | showForm (invalid ID)             |
+| 16  | Source tracking (UTM params)  | UTM/campaign params saved with submission   | addSourceTracking, showForm       |
 
 
 ---
@@ -214,4 +215,19 @@ Manual, user-perspective test scenarios for the Encatch test page (`/dashboard/e
 | 1    | In **showForm**, set Form configuration ID to invalid/non-existent (e.g. `invalid-id-12345`). | —                                                                                           |
 | 2    | Click **Open form**.                                                                          | Error message on page or `form:error` in event log; no broken modal; no uncaught exception. |
 
+
+---
+
+### 16. Source tracking (UTM params)
+
+
+| Step | Action                                                                                                    | Expected result                                                            |
+| ---- | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| 1    | In encatch admin, enable **Source Tracking** on the form with `utm_source`, `utm_campaign`, `utm_medium`. | Form saves with tracking params configured.                                |
+| 2    | On **addSourceTracking**, click **Fill test UTM preset** (or add rows manually).                          | Rows show `utm_source=slash-admin`, `utm_campaign=test_campaign`, etc.     |
+| 3    | Click **Apply source tracking** (optional — also runs automatically on **Open form**).                    | Success toast with merged key/value pairs.                                 |
+| 4    | Click **Open form**, submit the form.                                                                     | Form opens and submits normally.                                           |
+| 5    | In encatch admin → **Individual Responses** → open the submission → **Source Tracking** tab.              | Captured values match configured params (e.g. `utm_source` = `slash-admin`). |
+
+**Alternative:** append `?utm_source=google&utm_campaign=url_test` to the slash-admin URL. URL params merge with **addSourceTracking** values (SDK values win on key collision).
 
