@@ -31,6 +31,7 @@ import {
 	DEFAULT_DEVICE_INFO_TEST_VALUES,
 	DEVICE_OS_OPTIONS,
 	DEVICE_TYPE_OPTIONS,
+	generateRandomDeviceInfoTestValues,
 	loadDeviceInfoTestValues,
 	saveDeviceInfoTestValues,
 	type DeviceInfoTestValues,
@@ -779,6 +780,17 @@ export default function EncatchTestPage() {
 		saveDeviceInfoTestValues(DEFAULT_DEVICE_INFO_TEST_VALUES);
 		setDeviceInfoResult("Reset to test defaults (desktop / Windows / Chrome).");
 		toast.success("Device info reset to defaults");
+	};
+
+	const handleRandomDeviceInfo = () => {
+		const values = generateRandomDeviceInfoTestValues();
+		setDeviceType(values.deviceType);
+		setDeviceOs(values.deviceOs);
+		setDeviceOsVersion(values.deviceOsVersion);
+		setBrowser(values.browser);
+		setBrowserVersion(values.browserVersion);
+		setDeviceInfoResult(null);
+		toast.success(`Random device: ${values.deviceType} / ${values.deviceOs} / ${values.browser}`);
 	};
 
 	const handlePushDeviceInfo = () => {
@@ -1867,6 +1879,9 @@ export default function EncatchTestPage() {
 							</Button>
 							<Button type="button" variant="outline" size="sm" onClick={handlePushDeviceInfo}>
 								Set &amp; send (identify / session)
+							</Button>
+							<Button type="button" variant="outline" size="sm" onClick={handleRandomDeviceInfo} title="Generate random device type, OS, and browser">
+								Random
 							</Button>
 							<Button type="button" variant="ghost" size="sm" onClick={handleResetDeviceInfoDefaults}>
 								Reset defaults

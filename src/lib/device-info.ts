@@ -22,6 +22,46 @@ export const DEFAULT_DEVICE_INFO_TEST_VALUES: DeviceInfoTestValues = {
 	browserVersion: "124.0",
 };
 
+const OS_VERSIONS: Record<(typeof DEVICE_OS_OPTIONS)[number], string[]> = {
+	Windows: ["10", "11", "11.0.22631"],
+	"Mac OS": ["14.5", "15.0", "15.1"],
+	iOS: ["17.4", "18.0", "18.2"],
+	Android: ["13", "14", "15"],
+	Linux: ["6.5", "6.8", "22.04"],
+	"Chrome OS": ["120.0", "121.0", "122.0"],
+};
+
+const BROWSER_VERSIONS: Record<(typeof BROWSER_OPTIONS)[number], string[]> = {
+	Chrome: ["124.0", "125.0", "126.0", "131.0"],
+	Safari: ["17.4", "18.0", "18.1"],
+	Firefox: ["125.0", "126.0", "127.0"],
+	Edge: ["124.0", "125.0", "126.0"],
+	Opera: ["109.0", "110.0", "111.0"],
+	Brave: ["1.65", "1.66", "1.67"],
+};
+
+function pickRandom<T>(items: readonly T[]): T {
+	const picked = items.at(Math.floor(Math.random() * items.length));
+	if (picked === undefined) {
+		throw new Error("pickRandom requires a non-empty array");
+	}
+	return picked;
+}
+
+/** Pick random device type, OS, browser, and plausible version strings for the test harness. */
+export function generateRandomDeviceInfoTestValues(): DeviceInfoTestValues {
+	const deviceType = pickRandom(DEVICE_TYPE_OPTIONS);
+	const deviceOs = pickRandom(DEVICE_OS_OPTIONS);
+	const browser = pickRandom(BROWSER_OPTIONS);
+	return {
+		deviceType,
+		deviceOs,
+		deviceOsVersion: pickRandom(OS_VERSIONS[deviceOs]),
+		browser,
+		browserVersion: pickRandom(BROWSER_VERSIONS[browser]),
+	};
+}
+
 /** In-memory cache so fetch patch sees saves immediately (no localStorage lag). */
 let cachedTestValues: DeviceInfoTestValues | null = null;
 
