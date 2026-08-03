@@ -159,6 +159,7 @@
 			"encatch_inline_test.selector_fallback": "选择器 — 回退 #encatch",
 			"encatch_instructions": "Encatch SDK 指南",
 			"encatch_response_decoder": "Encatch JSON 解码",
+			"encatch_webhook_test": "Encatch Webhook 测试",
 			"refiner_test": "Refiner 测试",
 			"permission.page_test": "页面鉴权测试",
 			"error": {

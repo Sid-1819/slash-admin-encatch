@@ -22,6 +22,11 @@ export const frontendNavData: NavProps["data"] = [
 				icon: <Icon icon="solar:bug-minimalistic-bold-duotone" size="24" />,
 			},
 			{
+				title: "sys.nav.encatch_webhook_test",
+				path: "/encatch-webhook-test",
+				icon: <Icon icon="solar:link-round-bold-duotone" size="24" />,
+			},
+			{
 				title: "sys.nav.encatch_inline_test",
 				path: "/encatch-inline-test",
 				icon: <Icon icon="solar:sidebar-minimalistic-bold-duotone" size="24" />,

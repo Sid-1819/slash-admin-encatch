@@ -138,6 +138,7 @@
 			},
 			"workbench": "Workbench",
 			"encatch_test": "Encatch Test",
+			"encatch_webhook_test": "Encatch Webhook Test",
 			"encatch_inline_test": "Encatch Inline Test",
 			"encatch_inline_test.scenarios": "Scenario Runner",
 			"encatch_inline_test.modal": "Modal — No #encatch",
