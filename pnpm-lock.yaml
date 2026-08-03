@@ -18,8 +18,8 @@ importers:
         specifier: ^3.2.2
         version: 3.2.2(react@19.2.8)
       '@encatch/web-sdk':
-        specifier: 1.5.0
-        version: 1.5.0
+        specifier: 1.5.1-beta.0
+        version: 1.5.1-beta.0
       '@fontsource-variable/inter':
         specifier: ^5.1.0
         version: 5.3.0
@@ -517,8 +517,8 @@ packages:
   '@emotion/memoize@0.9.0':
     resolution: {integrity: sha512-30FAj7/EoJ5mwVPOWhAyCX+FPfMDrVecJAM+Iw9NRoSl4BBAQeqj4cApHHUXOVvIPgLVDsCFoz/hGD+5QQD1GQ==}
 
-  '@encatch/web-sdk@1.5.0':
-    resolution: {integrity: sha512-uJkQpYP4eDHVxtMFrEHuYpDx8vFg35gbiDHsZc9MjC27IWEsWco9gSyekiVdXRGQzSLYa9lIgUVX3cRgpG+VYw==}
+  '@encatch/web-sdk@1.5.1-beta.0':
+    resolution: {integrity: sha512-VQVhdos6Tw/y2zI/nUJ5a9AMGPH/Vpi17tpwHbQIyiTM9s8pZQqkq0Sp6XUZgsAoWh2I5uiWtYiBpU6RuTyV3g==}
     engines: {node: '>=18'}
 
   '@esbuild/aix-ppc64@0.25.12':
@@ -4746,7 +4746,7 @@ snapshots:
 
   '@emotion/memoize@0.9.0': {}
 
-  '@encatch/web-sdk@1.5.0': {}
+  '@encatch/web-sdk@1.5.1-beta.0': {}
 
   '@esbuild/aix-ppc64@0.25.12':
     optional: true
