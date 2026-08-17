@@ -11,15 +11,21 @@ import { GLOBAL_CONFIG } from "./global-config";
 import { useScrollTracking } from "./hooks";
 import { ThemeProvider } from "./theme/theme-provider";
 
-if (import.meta.env.DEV) {
-	import("react-scan").then(({ scan }) => {
-		scan({
-			enabled: false,
-			showToolbar: true,
-			log: false,
-			animationSpeed: "fast",
+// react-scan bundles Preact and conflicts with React 19 (toolbar throws on __H).
+// Opt in explicitly when needed: VITE_ENABLE_REACT_SCAN=true npm run dev
+if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_REACT_SCAN === "true") {
+	import("react-scan")
+		.then(({ scan }) => {
+			scan({
+				enabled: true,
+				showToolbar: true,
+				log: false,
+				animationSpeed: "fast",
+			});
+		})
+		.catch(() => {
+			// Ignore load failures in dev.
 		});
-	});
 }
 
 function App({ children }: { children: React.ReactNode }) {

@@ -149,6 +149,7 @@
 			"encatch_inline_test.selector_fallback": "Selector — Fallback #encatch",
 			"encatch_instructions": "Encatch SDK Guide",
 			"encatch_response_decoder": "Encatch JSON Decoder",
+			"encatch_log_viewer": "Encatch Log Viewer",
 			"refiner_test": "Refiner Test"
 		},
 		"settings": {
