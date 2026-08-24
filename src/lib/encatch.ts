@@ -257,12 +257,28 @@ const ENCATCH_FORM_API_BASE_URL: Record<string, string> = {
 	"form.encatch.com": "https://api.encatch.com",
 };
 
+/** Vite dev proxy path — requests here show in DevTools Network on localhost. */
+export const ENCATCH_DEV_API_PROXY_PATH = "/engage-product/encatch/api";
+
 /**
- * apiBaseUrl for init(). Form hosts map to api.*; local dev uses the app origin so Vite can proxy.
+ * apiBaseUrl for init(). Production uses api.*; Vite dev routes through the local proxy
+ * so Encatch API calls appear in DevTools → Network (same origin, filter: engage-product).
  */
 export function getEncatchApiBaseUrl(webHost: string): string | undefined {
 	const override = getEncatchApiBaseUrlOverride(webHost);
 	if (override) return override;
+
+	if (import.meta.env.DEV && typeof window !== "undefined") {
+		try {
+			const hostname = new URL(webHost).hostname;
+			if (ENCATCH_FORM_API_BASE_URL[hostname]) {
+				return `${window.location.origin}${ENCATCH_DEV_API_PROXY_PATH}`;
+			}
+		} catch {
+			// fall through
+		}
+	}
+
 	try {
 		const mapped = ENCATCH_FORM_API_BASE_URL[new URL(webHost).hostname];
 		if (mapped) {

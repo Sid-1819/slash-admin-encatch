@@ -51,7 +51,9 @@ import { Label } from "@/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { Text } from "@/ui/typography";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import {
+	type EncatchNetworkLogEntry,
+} from "@/lib/encatch-network-monitor";
 
 import { AddToResponsePrefillRows } from "./add-to-response-prefill-rows";
 
@@ -310,6 +312,8 @@ export default function EncatchTestPage() {
 	// Event log (on callback)
 	const [eventLog, setEventLog] = useState<EventLogEntry[]>([]);
 	const eventLogRef = useRef<EventLogEntry[]>([]);
+	const [networkLog, setNetworkLog] = useState<EncatchNetworkLogEntry[]>([]);
+	const networkLogRef = useRef<EncatchNetworkLogEntry[]>([]);
 	const maxLogEntries = 20;
 
 	const appendEvent = useCallback((eventType: string, payload: { formId?: string; timestamp: number; data?: Record<string, unknown> }) => {
@@ -329,27 +333,15 @@ export default function EncatchTestPage() {
 		return () => unsubscribe();
 	}, [appendEvent]);
 
-	// Intercept fetch to show Encatch API response status codes
+	// On-page network log listens to global monitor (installed in main.tsx for DevTools Network).
 	useEffect(() => {
-		const originalFetch = window.fetch;
-		window.fetch = async (...args) => {
-			const url = typeof args[0] === "string" ? args[0] : args[0] instanceof Request ? args[0].url : "";
-			const isEncatch = /encatch\.com/.test(url);
-			const response = await originalFetch(...args);
-			if (isEncatch) {
-				const method = (typeof args[1]?.method === "string" ? args[1].method : "GET").toUpperCase();
-				const path = new URL(url).pathname;
-				if (response.ok) {
-					toast.success(`${method} ${path} → ${response.status}`, { duration: 2500 });
-				} else {
-					toast.error(`${method} ${path} → ${response.status} ${response.statusText}`, { duration: 4000 });
-				}
-			}
-			return response;
+		const handler = (event: Event) => {
+			const entry = (event as CustomEvent<EncatchNetworkLogEntry>).detail;
+			networkLogRef.current = [entry, ...networkLogRef.current].slice(0, maxLogEntries);
+			setNetworkLog(networkLogRef.current);
 		};
-		return () => {
-			window.fetch = originalFetch;
-		};
+		window.addEventListener("encatch:network", handler);
+		return () => window.removeEventListener("encatch:network", handler);
 	}, []);
 
 	// Keep fetch patch in sync whenever manual device fields change
@@ -471,11 +463,9 @@ export default function EncatchTestPage() {
 			_encatch.trackEvent(trackEventName.trim() || "unnamed_event");
 			const msg = `trackEvent fired: ${trackEventName.trim() || "unnamed_event"}`;
 			setTrackResult(msg);
-			toast.success(msg);
 		} catch (e) {
 			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
 			setTrackResult(msg);
-			toast.error(msg);
 		}
 	};
 
@@ -498,11 +488,9 @@ export default function EncatchTestPage() {
 			_encatch.identifyUser(userName, mapTraitsToSdk(Object.keys(traits).length ? traits : undefined), Object.keys(options).length > 0 ? options : undefined);
 			const msg = `identifyUser called for: ${userName}`;
 			setIdentifyResult(msg);
-			toast.success(msg);
 		} catch (e) {
 			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
 			setIdentifyResult(msg);
-			toast.error(msg);
 		}
 	};
 
@@ -590,16 +578,13 @@ export default function EncatchTestPage() {
 			if (!values) {
 				const msg = "Add at least one key/value pair";
 				setSourceTrackingResult(msg);
-				toast.error(msg);
 				return;
 			}
 			const msg = `addSourceTracking: ${JSON.stringify(values)}`;
 			setSourceTrackingResult(msg);
-			toast.success(msg);
 		} catch (e) {
 			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
 			setSourceTrackingResult(msg);
-			toast.error(msg);
 		}
 	};
 
@@ -609,11 +594,9 @@ export default function EncatchTestPage() {
 			_encatch.setTheme(theme);
 			const msg = `setTheme: ${theme}`;
 			setThemeResult(msg);
-			toast.success(msg);
 		} catch (e) {
 			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
 			setThemeResult(msg);
-			toast.error(msg);
 		}
 	};
 
@@ -623,11 +606,9 @@ export default function EncatchTestPage() {
 			_encatch.setLocale(language.trim() || "en");
 			const msg = `setLocale: ${language.trim() || "en"}`;
 			setLanguageResult(msg);
-			toast.success(msg);
 		} catch (e) {
 			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
 			setLanguageResult(msg);
-			toast.error(msg);
 		}
 	};
 
@@ -637,11 +618,9 @@ export default function EncatchTestPage() {
 			_encatch.setCountry(country.trim() || "US");
 			const msg = `setCountry: ${country.trim() || "US"}`;
 			setCountryResult(msg);
-			toast.success(msg);
 		} catch (e) {
 			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
 			setCountryResult(msg);
-			toast.error(msg);
 		}
 	};
 
@@ -651,11 +630,9 @@ export default function EncatchTestPage() {
 			_encatch.trackScreen(screenName.trim() || window.location.href);
 			const msg = `trackScreen: ${screenName.trim() || window.location.href}`;
 			setTrackScreenResult(msg);
-			toast.success(msg);
 		} catch (e) {
 			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
 			setTrackScreenResult(msg);
-			toast.error(msg);
 		}
 	};
 
@@ -665,11 +642,9 @@ export default function EncatchTestPage() {
 			_encatch.startSession();
 			const msg = "startSession called (ping + URL tracking enabled)";
 			setSessionResult(msg);
-			toast.success(msg);
 		} catch (e) {
 			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
 			setSessionResult(msg);
-			toast.error(msg);
 		}
 	};
 
@@ -679,11 +654,9 @@ export default function EncatchTestPage() {
 			encatchPauseSession();
 			const msg = "pauseSession() called";
 			setSessionRecordingResult(msg);
-			toast.success(msg);
 		} catch (e) {
 			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
 			setSessionRecordingResult(msg);
-			toast.error(msg);
 		}
 	};
 
@@ -693,11 +666,9 @@ export default function EncatchTestPage() {
 			encatchResumeSession();
 			const msg = "resumeSession() called";
 			setSessionRecordingResult(msg);
-			toast.success(msg);
 		} catch (e) {
 			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
 			setSessionRecordingResult(msg);
-			toast.error(msg);
 		}
 	};
 
@@ -707,11 +678,9 @@ export default function EncatchTestPage() {
 			encatchStopSession();
 			const msg = "stopSession() called";
 			setSessionRecordingResult(msg);
-			toast.success(msg);
 		} catch (e) {
 			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
 			setSessionRecordingResult(msg);
-			toast.error(msg);
 		}
 	};
 
@@ -721,11 +690,9 @@ export default function EncatchTestPage() {
 			_encatch.resetUser();
 			const msg = "resetUser called (anonymous; session cleared)";
 			setResetUserResult(msg);
-			toast.success(msg);
 		} catch (e) {
 			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
 			setResetUserResult(msg);
-			toast.error(msg);
 		}
 	};
 
@@ -737,7 +704,6 @@ export default function EncatchTestPage() {
 				localStorage.removeItem(ENCATCH_DEVICE_ID_KEY);
 				const msg = "encatch_device_id removed. Refresh for a new device ID.";
 				setClearDeviceIdResult(msg);
-				toast.success(msg);
 			} else {
 				setClearDeviceIdResult("localStorage not available.");
 			}
@@ -763,11 +729,9 @@ export default function EncatchTestPage() {
 			saveDeviceInfoTestValues(values);
 			const msg = `Device info set: type=${values.deviceType}, OS=${values.deviceOs}, browser=${values.browser}`;
 			setDeviceInfoResult(msg);
-			toast.success(msg);
 		} catch (e) {
 			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
 			setDeviceInfoResult(msg);
-			toast.error(msg);
 		}
 	};
 
@@ -779,7 +743,6 @@ export default function EncatchTestPage() {
 		setBrowserVersion(DEFAULT_DEVICE_INFO_TEST_VALUES.browserVersion);
 		saveDeviceInfoTestValues(DEFAULT_DEVICE_INFO_TEST_VALUES);
 		setDeviceInfoResult("Reset to test defaults (desktop / Windows / Chrome).");
-		toast.success("Device info reset to defaults");
 	};
 
 	const handleRandomDeviceInfo = () => {
@@ -790,7 +753,6 @@ export default function EncatchTestPage() {
 		setBrowser(values.browser);
 		setBrowserVersion(values.browserVersion);
 		setDeviceInfoResult(null);
-		toast.success(`Random device: ${values.deviceType} / ${values.deviceOs} / ${values.browser}`);
 	};
 
 	const handlePushDeviceInfo = () => {
@@ -801,12 +763,10 @@ export default function EncatchTestPage() {
 				void handleIdentify();
 				const msg = "Device info saved & identifyUser called";
 				setDeviceInfoResult(msg);
-				toast.success(msg);
 			} else {
 				_encatch.startSession();
 				const msg = "Device info saved & startSession called";
 				setDeviceInfoResult(msg);
-				toast.success(msg);
 			}
 		} catch (e) {
 			setDeviceInfoResult(`Error: ${e instanceof Error ? e.message : String(e)}`);
@@ -821,7 +781,6 @@ export default function EncatchTestPage() {
 			if (skippedKeys.length > 0) {
 				const msg = `Error: showForm context values must be string, number, or boolean. Invalid keys: ${skippedKeys.join(", ")}`;
 				setShowFormResult(msg);
-				toast.error(msg);
 				return;
 			}
 			const sourceTracking = applySourceTrackingFromRows();
@@ -830,11 +789,9 @@ export default function EncatchTestPage() {
 			const stMsg = sourceTracking ? `, sourceTracking=${JSON.stringify(sourceTracking)}` : "";
 			const msg = `showForm: ${formId} (reset=${resetMode1}${ctxMsg}${stMsg})`;
 			setShowFormResult(msg);
-			toast.success(msg);
 		} catch (e) {
 			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
 			setShowFormResult(msg);
-			toast.error(msg);
 		}
 	};
 
@@ -846,7 +803,6 @@ export default function EncatchTestPage() {
 			if (skippedKeys.length > 0) {
 				const msg = `Error: showForm context values must be string, number, or boolean. Invalid keys: ${skippedKeys.join(", ")}`;
 				setShowFormResult(msg);
-				toast.error(msg);
 				return;
 			}
 			const sourceTracking = applySourceTrackingFromRows();
@@ -855,11 +811,9 @@ export default function EncatchTestPage() {
 			const stMsg = sourceTracking ? `, sourceTracking=${JSON.stringify(sourceTracking)}` : "";
 			const msg = `showForm: ${formId} (reset=${resetMode2}${ctxMsg}${stMsg})`;
 			setShowFormResult(msg);
-			toast.success(msg);
 		} catch (e) {
 			const msg = `Error: ${e instanceof Error ? e.message : String(e)}`;
 			setShowFormResult(msg);
-			toast.error(msg);
 		}
 	};
 
@@ -868,7 +822,6 @@ export default function EncatchTestPage() {
 		const validRows = prefillRows.filter((r) => r.questionId.trim());
 		if (validRows.length === 0) {
 			setAddToResponseResult("Error: add at least one question ID");
-			toast.error("Add at least one question ID");
 			return;
 		}
 		const applied: string[] = [];
@@ -887,12 +840,10 @@ export default function EncatchTestPage() {
 			const appliedMsg = applied.length > 0 ? ` Added: ${applied.join("; ")}` : "";
 			const msg = `Error: ${errors.join("; ")}.${appliedMsg}`;
 			setAddToResponseResult(msg);
-			toast.error(msg);
 			return;
 		}
 		const msg = `addToResponse: ${applied.length} answer${applied.length === 1 ? "" : "s"} staged`;
 		setAddToResponseResult(msg);
-		toast.success(msg);
 	};
 
 	const handleRandomUser = () => {
@@ -989,19 +940,15 @@ export default function EncatchTestPage() {
 			if (result.status === "initialized") {
 				const apiBaseUrl = getEncatchApiBaseUrl(result.host);
 				setInitResult(`SDK initialized → ${result.hostLabel} (API: ${apiBaseUrl || result.host})`);
-				toast.success(`SDK initialized with ${result.hostLabel}`);
 			} else if (result.status === "already_initialized") {
 				const apiBaseUrl = getEncatchApiBaseUrl(result.host);
 				setInitResult(`SDK active → ${result.hostLabel} (API: ${apiBaseUrl || result.host})`);
-				toast.message(`Already initialized with ${result.hostLabel}`);
 			} else {
 				setInitResult(result.message);
-				toast.error(result.message);
 			}
 		} catch (e) {
 			const msg = e instanceof Error ? e.message : String(e);
 			setInitResult(`Error: ${msg}`);
-			toast.error(msg || "Failed to initialize SDK.");
 		}
 	};
 
@@ -1062,9 +1009,7 @@ export default function EncatchTestPage() {
 			setSourceTrackingRows(DEFAULT_SOURCE_TRACKING_ROWS.map((row) => ({ ...row, id: crypto.randomUUID() })));
 			setPrefillRows([newAddToResponsePrefillRow()]);
 			refreshSavedApiKeyEntries();
-			toast.success("Cleared local/session/IndexedDB; API key, host, and saved keys kept.");
 		} catch {
-			toast.error("Failed to clear storage.");
 		}
 	};
 
@@ -1100,7 +1045,6 @@ export default function EncatchTestPage() {
 			}
 			window.location.reload();
 		} catch {
-			toast.error("Failed to clean all storage.");
 		}
 	};
 
@@ -1297,7 +1241,6 @@ export default function EncatchTestPage() {
 											setEncatchApiKeyForHost(activeHost, encatchApiKey.trim());
 											refreshSavedApiKeyEntries();
 										} catch (e) {
-											toast.error(e instanceof Error ? e.message : "Invalid custom domain configuration.");
 										}
 									}
 								}}
@@ -1318,6 +1261,45 @@ export default function EncatchTestPage() {
 							Clean all (including cookies)
 						</Button>
 					</div>
+				</div>
+			</Section>
+
+			{/* Encatch API network log (fetch + XHR) */}
+			<Section
+				title="Network (Encatch API)"
+				description="Same requests appear in browser DevTools → Network. In local dev, filter by engage-product (proxied via localhost)."
+				icon="solar:global-bold-duotone"
+			>
+				<div className="flex flex-col gap-2">
+					{networkLog.length === 0 ? (
+						<div className="flex flex-col items-center justify-center py-6 text-center">
+							<Icon icon="solar:wi-fi-router-minimalistic-bold-duotone" size={32} className="text-muted-foreground/40 mb-2" />
+							<Text variant="caption" className="text-muted-foreground">
+								No Encatch API requests yet. Initialize the SDK, then fire trackEvent / identifyUser / showForm.
+							</Text>
+						</div>
+					) : (
+						<div className="max-h-56 overflow-y-auto rounded-lg border border-border bg-muted/20 divide-y divide-border/50">
+							{networkLog.map((entry, i) => (
+								<div key={`${entry.at}-${entry.url}-${i}`} className="flex items-start gap-3 px-3 py-2.5">
+									<div
+										className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${entry.status >= 200 && entry.status < 300 ? "bg-green-500" : entry.status === 0 ? "bg-destructive" : "bg-amber-500"}`}
+									/>
+									<div className="flex-1 min-w-0">
+										<div className="flex items-center justify-between gap-2">
+											<span className="font-mono text-xs font-semibold text-foreground">
+												{entry.method} {entry.status || "—"} {entry.statusText}
+											</span>
+											<span className="text-[10px] text-muted-foreground/60 shrink-0">
+												{new Date(entry.at).toLocaleTimeString()}
+											</span>
+										</div>
+										<span className="text-[11px] text-muted-foreground truncate block">{entry.url}</span>
+									</div>
+								</div>
+							))}
+						</div>
+					)}
 				</div>
 			</Section>
 

@@ -1,4 +1,5 @@
 import "./lib/encatch-test-patch";
+import { installEncatchNetworkMonitor } from "./lib/encatch-network-monitor";
 import "./global.css";
 import "./theme/theme.css";
 import "./locales/i18n";
@@ -14,6 +15,10 @@ import PageError from "./pages/sys/error/PageError";
 import { routesSection } from "./routes/sections";
 // import { urlJoin } from "./utils";
 // import { init } from "encatch-web-sdk";
+
+if (import.meta.env.DEV) {
+	installEncatchNetworkMonitor();
+}
 
 await registerLocalIcons();
 // await worker.start({
