@@ -72,6 +72,16 @@ export const frontendNavData: NavProps["data"] = [
 				icon: <Icon icon="solar:code-square-bold-duotone" size="24" />,
 			},
 			{
+				title: "sys.nav.encatch_hmac_generator",
+				path: "/encatch-hmac-generator",
+				icon: <Icon icon="solar:key-bold-duotone" size="24" />,
+			},
+			{
+				title: "sys.nav.shareable_prefill_test",
+				path: "/shareable-prefill-test",
+				icon: <Icon icon="solar:link-round-bold-duotone" size="24" />,
+			},
+			{
 				title: "sys.nav.encatch_log_viewer",
 				path: "/encatch-log-viewer",
 				icon: <Icon icon="solar:document-text-bold-duotone" size="24" />,

@@ -21,6 +21,8 @@ export const frontendDashboardRoutes: RouteObject[] = [
 	},
 	{ path: "encatch-instructions", element: Component("/pages/dashboard/encatch-instructions") },
 	{ path: "encatch-response-decoder", element: Component("/pages/dashboard/encatch-response-decoder") },
+	{ path: "encatch-hmac-generator", element: Component("/pages/dashboard/encatch-hmac-generator") },
+	{ path: "shareable-prefill-test", element: Component("/pages/dashboard/shareable-prefill-test") },
 	{ path: "encatch-log-viewer", element: Component("/pages/dashboard/encatch-log-viewer") },
 	{ path: "refiner-test", element: Component("/pages/dashboard/refiner-test") },
 	{

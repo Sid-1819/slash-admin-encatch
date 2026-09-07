@@ -36,6 +36,7 @@ import {
 	saveDeviceInfoTestValues,
 	type DeviceInfoTestValues,
 } from "@/lib/device-info";
+import { generateHmacSha256Hex } from "@/lib/hmac-signature";
 import {
 	type AddToResponsePrefillRow,
 	newAddToResponsePrefillRow,
@@ -98,20 +99,6 @@ interface EventLogEntry {
 	eventType: string;
 	payload: { formId?: string; timestamp: number; data?: Record<string, unknown> };
 	at: string;
-}
-
-/** Matches core-backend ApiValidationUseCase: HMAC-SHA256(userName) or HMAC-SHA256(userName + epochMs). */
-async function generateHMACSignature(userId: string, secretKey: string, datetimeUTC?: string): Promise<string> {
-	const message = datetimeUTC ? `${userId}${datetimeUTC}` : userId;
-	const enc = new TextEncoder();
-	const keyBytes = enc.encode(secretKey);
-	const messageBytes = enc.encode(message);
-	const cryptoKey = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-	const signature = await crypto.subtle.sign("HMAC", cryptoKey, messageBytes);
-	const hex = Array.from(new Uint8Array(signature))
-		.map((b) => b.toString(16).padStart(2, "0"))
-		.join("");
-	return hex;
 }
 
 function getTestStored(key: string): string {
@@ -488,7 +475,7 @@ export default function EncatchTestPage() {
 			if (identifyCountry.trim()) options.country = identifyCountry.trim();
 			if (identifySecretKey.trim()) {
 				const datetimeUTC = identifyIncludeDateTime ? String(Date.now()) : undefined;
-				const signature = await generateHMACSignature(identifyUserName.trim() || "anonymous", identifySecretKey.trim(), datetimeUTC);
+				const signature = await generateHmacSha256Hex(identifyUserName.trim() || "anonymous", identifySecretKey.trim(), datetimeUTC);
 				options.secure = {
 					signature,
 					...(datetimeUTC && { generatedDateTimeinUTC: datetimeUTC }),
