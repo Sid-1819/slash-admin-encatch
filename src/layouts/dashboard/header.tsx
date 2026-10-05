@@ -20,23 +20,28 @@ export default function Header({ leftSlot }: HeaderProps) {
 		<header
 			data-slot="slash-layout-header"
 			className={cn(
-				"sticky z-app-bar top-0 right-0 left-0 flex items-center bg-background justify-between px-2 ml-[1px]",
+				"sticky z-app-bar top-0 right-0 left-0 flex w-full min-w-0 max-w-full items-center justify-between overflow-hidden bg-background px-1 sm:px-2",
 				"h-[var(--layout-header-height)] grow-0 shrink-0",
 			)}
 		>
-			<div className="flex items-center">
+			<div className="flex min-w-0 items-center">
 				{leftSlot}
 
-				<div className="hidden md:block ml-4">{breadCrumb && <BreadCrumb />}</div>
+				<div className="ml-4 hidden md:block">{breadCrumb && <BreadCrumb />}</div>
 			</div>
 
-			<div className="flex items-center gap-1">
+			<div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
 				<SearchBar />
 				<LocalePicker />
-				<Button variant="ghost" size="icon" className="rounded-full" onClick={() => window.open("https://github.com/d3george/slash-admin")}>
+				<Button
+					variant="ghost"
+					size="icon"
+					className="hidden rounded-full sm:inline-flex"
+					onClick={() => window.open("https://github.com/d3george/slash-admin")}
+				>
 					<Icon icon="mdi:github" size={24} />
 				</Button>
-				<Button variant="ghost" size="icon" className="rounded-full" onClick={() => window.open("https://discord.gg/fXemAXVNDa")}>
+				<Button variant="ghost" size="icon" className="hidden rounded-full sm:inline-flex" onClick={() => window.open("https://discord.gg/fXemAXVNDa")}>
 					<Icon icon="carbon:logo-discord" size={24} />
 				</Button>
 				<NoticeButton />

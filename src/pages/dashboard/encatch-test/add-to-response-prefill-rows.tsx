@@ -131,7 +131,7 @@ export function AddToResponsePrefillRows({ rows, onChange, onApply, applyDisable
 
 					{rows.map((row, i) => (
 						<div key={row.id} className="rounded-lg border border-border/70 bg-muted/10 p-3">
-							<div className="mb-3 flex items-center justify-between gap-2 border-b border-border/50 pb-2">
+							<div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2">
 								<div className="flex min-w-0 flex-wrap items-center gap-2">
 									<Badge variant="outline" overlay="square" className="font-mono text-[10px]">
 										#{i + 1}
@@ -204,8 +204,8 @@ export function AddToResponsePrefillRows({ rows, onChange, onApply, applyDisable
 			)}
 
 			<div className="flex flex-col gap-2 border-t border-border pt-4">
-				<div className="flex justify-end">
-					<Button type="button" size="sm" onClick={onApply} disabled={applyDisabled}>
+				<div className="flex sm:justify-end">
+					<Button type="button" size="sm" className="w-full sm:w-auto" onClick={onApply} disabled={applyDisabled}>
 						Add to response
 					</Button>
 				</div>

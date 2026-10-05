@@ -80,17 +80,17 @@ function Section({
 	children: React.ReactNode;
 }) {
 	return (
-		<Card className="overflow-hidden">
-			<CardHeader className="border-b border-border/40 bg-muted/20 pb-3">
-				<div className="flex items-start gap-2">
+		<Card className="min-w-0 max-w-full gap-4 overflow-hidden py-4 sm:gap-6 sm:py-6">
+			<CardHeader className="border-b border-border/40 bg-muted/20 px-3 pb-3 sm:px-6">
+				<div className="flex min-w-0 items-start gap-2">
 					{icon && <Icon icon={icon} size={18} className="mt-0.5 text-primary shrink-0" />}
-					<div>
+					<div className="min-w-0">
 						<CardTitle className="text-sm font-semibold">{title}</CardTitle>
-						{description && <CardDescription className="text-xs mt-0.5">{description}</CardDescription>}
+						{description && <CardDescription className="mt-0.5 break-words text-xs">{description}</CardDescription>}
 					</div>
 				</div>
 			</CardHeader>
-			<CardContent className="pt-4">{children}</CardContent>
+			<CardContent className="px-3 pt-3 sm:px-6 sm:pt-4">{children}</CardContent>
 		</Card>
 	);
 }
@@ -218,7 +218,9 @@ function ResultMessage({ message }: { message: string | null }) {
 	if (!message) return null;
 	const isError = message.toLowerCase().startsWith("error");
 	return (
-		<div className={`mt-2 rounded-md px-3 py-2 text-xs font-medium ${isError ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
+		<div
+			className={`mt-2 break-words rounded-md px-3 py-2 text-xs font-medium ${isError ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}
+		>
 			{message}
 		</div>
 	);
@@ -1092,21 +1094,21 @@ export default function EncatchTestPage() {
 	};
 
 	return (
-		<div className="flex flex-col gap-6 pb-8">
+		<div className="flex w-full min-w-0 max-w-full flex-col gap-4 overflow-x-clip pb-16 sm:gap-5">
 			{/* Page header */}
-			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-3">
-					<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+			<div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<div className="flex min-w-0 items-start gap-3">
+					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
 						<Icon icon="solar:bug-minimalistic-bold-duotone" size={22} className="text-primary" />
 					</div>
-					<div>
-						<h2 className="text-xl font-bold tracking-tight">Encatch SDK Test</h2>
+					<div className="min-w-0">
+						<h2 className="text-lg font-bold tracking-tight sm:text-xl">Encatch SDK Test</h2>
 						<Text variant="body2" className="text-muted-foreground text-xs">
 							Test all @encatch/web-sdk methods. Ensure Encatch is initialized first.
 						</Text>
 					</div>
 				</div>
-				<Badge variant={_encatch._initialized ? "success" : "warning"} className="shrink-0">
+				<Badge variant={_encatch._initialized ? "success" : "warning"} className="w-fit max-w-full shrink-0 whitespace-normal">
 					{_encatch._initialized ? `Connected: ${getEncatchHostLabel(_encatch._config?.webHost)}` : "Not Initialized"}
 				</Badge>
 			</div>
@@ -1121,16 +1123,16 @@ export default function EncatchTestPage() {
 					<ResultMessage message={initResult} />
 
 					{_encatch._initialized && (
-						<div className="flex items-center gap-2 rounded-md bg-success/10 px-3 py-2 text-xs font-medium text-success-dark dark:text-success-light">
-							<Icon icon="solar:link-bold" size={14} />
-							<span>
+						<div className="flex items-start gap-2 rounded-md bg-success/10 px-3 py-2 text-xs font-medium text-success-dark dark:text-success-light">
+							<Icon icon="solar:link-bold" size={14} className="mt-0.5 shrink-0" />
+							<span className="min-w-0 break-all">
 								API: <code className="font-mono">{getEncatchApiBaseUrl(_encatch._config?.webHost || "") || _encatch._config?.webHost}</code>
 							</span>
 						</div>
 					)}
 
 					{/* Environment cards */}
-					<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+					<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4 [&>*]:min-w-0">
 						{ENCATCH_HOST_OPTIONS.map((opt) => {
 							const entry = savedApiKeyEntries.find((e) => e.host === opt.value);
 							const savedKey = entry?.apiKey || "";
@@ -1141,7 +1143,7 @@ export default function EncatchTestPage() {
 									key={opt.value}
 									type="button"
 									onClick={() => handlePresetHostSelect(opt.value)}
-									className={`relative flex flex-col items-start gap-1 rounded-lg border-2 p-3 text-left transition-all ${
+									className={`relative flex min-w-0 max-w-full flex-col items-start gap-1 rounded-lg border-2 p-3 text-left transition-all ${
 										isConnected ? "border-success bg-success/5" : isSelected ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
 									}`}
 								>
@@ -1150,7 +1152,7 @@ export default function EncatchTestPage() {
 											<span className="flex h-2 w-2 rounded-full bg-success animate-pulse" />
 										</span>
 									)}
-									<span className="text-xs font-semibold">{opt.label}</span>
+									<span className="w-full truncate text-xs font-semibold">{opt.label}</span>
 									{savedKey ? (
 										<span className="font-mono text-[10px] text-muted-foreground truncate w-full">{formatEncatchApiKeyPreview(savedKey)}</span>
 									) : (
@@ -1162,7 +1164,7 @@ export default function EncatchTestPage() {
 						<button
 							type="button"
 							onClick={handleCustomDomainSelect}
-							className={`relative flex flex-col items-start gap-1 rounded-lg border-2 p-3 text-left transition-all ${
+							className={`relative flex min-w-0 max-w-full flex-col items-start gap-1 rounded-lg border-2 p-3 text-left transition-all ${
 								hostMode === "custom" && _encatch._initialized && !isEncatchPresetHost(_encatch._config?.webHost || "")
 									? "border-success bg-success/5"
 									: hostMode === "custom"
@@ -1175,7 +1177,7 @@ export default function EncatchTestPage() {
 									<span className="flex h-2 w-2 rounded-full bg-success animate-pulse" />
 								</span>
 							)}
-							<span className="text-xs font-semibold">{ENCATCH_CUSTOM_DOMAIN_LABEL}</span>
+							<span className="w-full truncate text-xs font-semibold">{ENCATCH_CUSTOM_DOMAIN_LABEL}</span>
 							{hostMode === "custom" && customFormHost.trim() ? (
 								<span className="font-mono text-[10px] text-muted-foreground truncate w-full">{getEncatchHostLabel(customFormHost)}</span>
 							) : (
@@ -1257,7 +1259,7 @@ export default function EncatchTestPage() {
 							API key for{" "}
 							<span className="font-semibold text-primary">{getEncatchHostLabel(hostMode === "custom" ? customFormHost || encatchHost : encatchHost)}</span>
 						</Label>
-						<div className="flex gap-2">
+						<div className="flex flex-col gap-2 sm:flex-row">
 							<Input
 								id="encatch-api-key"
 								type="text"
@@ -1289,19 +1291,19 @@ export default function EncatchTestPage() {
 									}
 								}}
 								autoComplete="off"
-								className="flex-1 font-mono text-xs"
+								className="min-w-0 flex-1 font-mono text-xs"
 							/>
-							<Button type="button" size="sm" onClick={handleInitializeSdk}>
+							<Button type="button" size="sm" className="w-full sm:w-auto" onClick={handleInitializeSdk}>
 								Initialize
 							</Button>
 						</div>
 					</div>
 
-					<div className="flex flex-wrap gap-2 border-t border-border pt-4">
-						<Button type="button" size="sm" onClick={() => handleClearAllExceptApiKeyAndReload()}>
+					<div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:flex-wrap">
+						<Button type="button" size="sm" className="h-auto w-full whitespace-normal sm:w-auto" onClick={() => handleClearAllExceptApiKeyAndReload()}>
 							Clear storage (keep keys) & reload
 						</Button>
-						<Button type="button" variant="secondary" size="sm" onClick={() => handleCleanAll()}>
+						<Button type="button" variant="secondary" size="sm" className="h-auto w-full whitespace-normal sm:w-auto" onClick={() => handleCleanAll()}>
 							Clean all (including cookies)
 						</Button>
 					</div>
@@ -1323,9 +1325,9 @@ export default function EncatchTestPage() {
 							{eventLog.map((entry, i) => (
 								<div key={`${entry.at}-${i}`} className="flex items-start gap-3 px-3 py-2.5">
 									<div className="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0" />
-									<div className="flex-1 min-w-0">
-										<div className="flex items-center justify-between gap-2">
-											<span className="font-mono text-xs font-semibold text-foreground">{entry.eventType}</span>
+									<div className="min-w-0 flex-1">
+										<div className="flex items-start justify-between gap-2">
+											<span className="min-w-0 break-all font-mono text-xs font-semibold text-foreground">{entry.eventType}</span>
 											<span className="text-[10px] text-muted-foreground/60 shrink-0">{new Date(entry.at).toLocaleTimeString()}</span>
 										</div>
 										{(entry.payload.formId != null || entry.payload.data != null) && (
@@ -1343,7 +1345,7 @@ export default function EncatchTestPage() {
 			</Section>
 
 			{/* identifyUser & showForm — side by side */}
-			<div className="grid gap-4 lg:grid-cols-2 items-start">
+			<div className="grid min-w-0 gap-4 lg:grid-cols-2 lg:items-start [&>*]:min-w-0">
 				<Section
 					title="identifyUser"
 					description="Identify the current user. Fill simple fields; generated traits JSON is shown below."
@@ -1352,15 +1354,21 @@ export default function EncatchTestPage() {
 					<div className="flex flex-col gap-4">
 						<div className="flex flex-col gap-1.5">
 							<Label htmlFor="identify-user-name">User name</Label>
-							<div className="flex gap-2">
+							<div className="flex flex-col gap-2 sm:flex-row">
 								<Input
 									id="identify-user-name"
 									value={identifyUserName}
 									onChange={(e) => setIdentifyUserName(e.target.value)}
 									placeholder="user_123"
-									className="flex-1"
+									className="min-w-0 flex-1"
 								/>
-								<Button type="button" variant="outline" onClick={handleRandomUser} title="Generate random username, email, and display name">
+								<Button
+									type="button"
+									variant="outline"
+									className="w-full sm:w-auto"
+									onClick={handleRandomUser}
+									title="Generate random username, email, and display name"
+								>
 									Random user
 								</Button>
 							</div>
@@ -1398,10 +1406,20 @@ export default function EncatchTestPage() {
 									</Button>
 								</div>
 								{identifySetExtra.map((row, i) => (
-									<div key={row.id} className="flex gap-2">
-										<Input placeholder="key" value={row.key} onChange={(e) => updateSetExtra(i, "key", e.target.value)} className="font-mono text-sm" />
-										<Input placeholder="value" value={row.value} onChange={(e) => updateSetExtra(i, "value", e.target.value)} className="font-mono text-sm" />
-										<Button type="button" variant="ghost" size="sm" onClick={() => removeSetExtra(i)}>
+									<div key={row.id} className="flex flex-col gap-2 sm:flex-row">
+										<Input
+											placeholder="key"
+											value={row.key}
+											onChange={(e) => updateSetExtra(i, "key", e.target.value)}
+											className="min-w-0 font-mono text-sm sm:flex-1"
+										/>
+										<Input
+											placeholder="value"
+											value={row.value}
+											onChange={(e) => updateSetExtra(i, "value", e.target.value)}
+											className="min-w-0 font-mono text-sm sm:flex-1"
+										/>
+										<Button type="button" variant="ghost" size="sm" className="w-full shrink-0 sm:w-auto" onClick={() => removeSetExtra(i)}>
 											Remove
 										</Button>
 									</div>
@@ -1415,10 +1433,20 @@ export default function EncatchTestPage() {
 									</Button>
 								</div>
 								{identifySetOncePairs.map((row, i) => (
-									<div key={row.id} className="flex gap-2">
-										<Input placeholder="key" value={row.key} onChange={(e) => updateSetOnce(i, "key", e.target.value)} className="font-mono text-sm" />
-										<Input placeholder="value" value={row.value} onChange={(e) => updateSetOnce(i, "value", e.target.value)} className="font-mono text-sm" />
-										<Button type="button" variant="ghost" size="sm" onClick={() => removeSetOnce(i)}>
+									<div key={row.id} className="flex flex-col gap-2 sm:flex-row">
+										<Input
+											placeholder="key"
+											value={row.key}
+											onChange={(e) => updateSetOnce(i, "key", e.target.value)}
+											className="min-w-0 font-mono text-sm sm:flex-1"
+										/>
+										<Input
+											placeholder="value"
+											value={row.value}
+											onChange={(e) => updateSetOnce(i, "value", e.target.value)}
+											className="min-w-0 font-mono text-sm sm:flex-1"
+										/>
+										<Button type="button" variant="ghost" size="sm" className="w-full shrink-0 sm:w-auto" onClick={() => removeSetOnce(i)}>
 											Remove
 										</Button>
 									</div>
@@ -1432,16 +1460,21 @@ export default function EncatchTestPage() {
 									</Button>
 								</div>
 								{identifyIncrementPairs.map((row, i) => (
-									<div key={row.id} className="flex gap-2">
-										<Input placeholder="key" value={row.key} onChange={(e) => updateIncrement(i, "key", e.target.value)} className="font-mono text-sm" />
+									<div key={row.id} className="flex flex-col gap-2 sm:flex-row">
+										<Input
+											placeholder="key"
+											value={row.key}
+											onChange={(e) => updateIncrement(i, "key", e.target.value)}
+											className="min-w-0 font-mono text-sm sm:flex-1"
+										/>
 										<Input
 											type="number"
 											placeholder="value"
 											value={row.value}
 											onChange={(e) => updateIncrement(i, "value", e.target.value)}
-											className="font-mono text-sm"
+											className="min-w-0 font-mono text-sm sm:flex-1"
 										/>
-										<Button type="button" variant="ghost" size="sm" onClick={() => removeIncrement(i)}>
+										<Button type="button" variant="ghost" size="sm" className="w-full shrink-0 sm:w-auto" onClick={() => removeIncrement(i)}>
 											Remove
 										</Button>
 									</div>
@@ -1455,16 +1488,21 @@ export default function EncatchTestPage() {
 									</Button>
 								</div>
 								{identifyDecrementPairs.map((row, i) => (
-									<div key={row.id} className="flex gap-2">
-										<Input placeholder="key" value={row.key} onChange={(e) => updateDecrement(i, "key", e.target.value)} className="font-mono text-sm" />
+									<div key={row.id} className="flex flex-col gap-2 sm:flex-row">
+										<Input
+											placeholder="key"
+											value={row.key}
+											onChange={(e) => updateDecrement(i, "key", e.target.value)}
+											className="min-w-0 font-mono text-sm sm:flex-1"
+										/>
 										<Input
 											type="number"
 											placeholder="value"
 											value={row.value}
 											onChange={(e) => updateDecrement(i, "value", e.target.value)}
-											className="font-mono text-sm"
+											className="min-w-0 font-mono text-sm sm:flex-1"
 										/>
-										<Button type="button" variant="ghost" size="sm" onClick={() => removeDecrement(i)}>
+										<Button type="button" variant="ghost" size="sm" className="w-full shrink-0 sm:w-auto" onClick={() => removeDecrement(i)}>
 											Remove
 										</Button>
 									</div>
@@ -1546,7 +1584,7 @@ export default function EncatchTestPage() {
 					</div>
 				</Section>
 
-				<div className="flex flex-col gap-4">
+				<div className="flex min-w-0 flex-col gap-4">
 					<Section
 						title="addSourceTracking"
 						description="Merge UTM/campaign params before showForm. Values override URL query params. Also applied automatically when you open a form."
@@ -1568,20 +1606,20 @@ export default function EncatchTestPage() {
 							) : (
 								<div className="flex flex-col gap-2">
 									{sourceTrackingRows.map((row, i) => (
-										<div key={row.id} className="flex flex-wrap gap-2">
+										<div key={row.id} className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
 											<Input
 												placeholder="utm_source"
 												value={row.key}
 												onChange={(e) => updateSourceTrackingRow(i, "key", e.target.value)}
-												className="font-mono text-sm min-w-[120px] flex-1"
+												className="min-w-0 font-mono text-sm sm:min-w-[120px] sm:flex-1"
 											/>
 											<Input
 												placeholder="slash-admin"
 												value={row.value}
 												onChange={(e) => updateSourceTrackingRow(i, "value", e.target.value)}
-												className="font-mono text-sm min-w-[140px] flex-[2]"
+												className="min-w-0 font-mono text-sm sm:min-w-[140px] sm:flex-[2]"
 											/>
-											<Button type="button" variant="ghost" size="sm" onClick={() => removeSourceTrackingRow(i)}>
+											<Button type="button" variant="ghost" size="sm" className="w-full shrink-0 sm:w-auto" onClick={() => removeSourceTrackingRow(i)}>
 												Remove
 											</Button>
 										</div>
@@ -1601,16 +1639,16 @@ export default function EncatchTestPage() {
 						<div className="flex flex-col gap-4">
 							<div className="flex flex-col gap-2">
 								<Label htmlFor="feedback-id-1">Form ID 1</Label>
-								<div className="flex flex-wrap items-end gap-2">
+								<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
 									<Input
 										id="feedback-id-1"
 										value={feedbackFormId1}
 										onChange={(e) => setFeedbackFormId1(e.target.value)}
 										placeholder={getEncatchFeedbackFormId1() || "Set on login screen"}
-										className="flex-1 min-w-[120px]"
+										className="min-w-0 w-full sm:flex-1"
 									/>
 									<Select value={resetMode1} onValueChange={(v) => setResetMode1(v as ResetMode)}>
-										<SelectTrigger className="w-[130px]">
+										<SelectTrigger className="w-full sm:w-[130px]">
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
@@ -1619,21 +1657,23 @@ export default function EncatchTestPage() {
 											<SelectItem value="never">never</SelectItem>
 										</SelectContent>
 									</Select>
-									<Button onClick={handleOpenForm1}>Open form 1</Button>
+									<Button className="w-full sm:w-auto" onClick={handleOpenForm1}>
+										Open form 1
+									</Button>
 								</div>
 							</div>
 							<div className="flex flex-col gap-2">
 								<Label htmlFor="feedback-id-2">Form ID 2</Label>
-								<div className="flex flex-wrap items-end gap-2">
+								<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
 									<Input
 										id="feedback-id-2"
 										value={feedbackFormId2}
 										onChange={(e) => setFeedbackFormId2(e.target.value)}
 										placeholder={getEncatchFeedbackFormId2() || "Set on login screen"}
-										className="flex-1 min-w-[120px]"
+										className="min-w-0 w-full sm:flex-1"
 									/>
 									<Select value={resetMode2} onValueChange={(v) => setResetMode2(v as ResetMode)}>
-										<SelectTrigger className="w-[130px]">
+										<SelectTrigger className="w-full sm:w-[130px]">
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
@@ -1642,7 +1682,9 @@ export default function EncatchTestPage() {
 											<SelectItem value="never">never</SelectItem>
 										</SelectContent>
 									</Select>
-									<Button onClick={handleOpenForm2}>Open form 2</Button>
+									<Button className="w-full sm:w-auto" onClick={handleOpenForm2}>
+										Open form 2
+									</Button>
 								</div>
 							</div>
 							<div className="flex flex-col gap-2 rounded-lg border border-border/50 bg-muted/20 p-3">
@@ -1653,20 +1695,20 @@ export default function EncatchTestPage() {
 									</Button>
 								</div>
 								{showFormContextRows.map((row, i) => (
-									<div key={row.id} className="flex flex-wrap gap-2">
+									<div key={row.id} className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
 										<Input
 											placeholder="key"
 											value={row.key}
 											onChange={(e) => updateShowFormContextRow(i, "key", e.target.value)}
-											className="font-mono text-sm min-w-[100px] flex-1"
+											className="min-w-0 font-mono text-sm sm:min-w-[100px] sm:flex-1"
 										/>
 										<Input
 											placeholder='value (JSON: 42, true, "text")'
 											value={row.value}
 											onChange={(e) => updateShowFormContextRow(i, "value", e.target.value)}
-											className="font-mono text-sm min-w-[140px] flex-[2]"
+											className="min-w-0 font-mono text-sm sm:min-w-[140px] sm:flex-[2]"
 										/>
-										<Button type="button" variant="ghost" size="sm" onClick={() => removeShowFormContextRow(i)}>
+										<Button type="button" variant="ghost" size="sm" className="w-full shrink-0 sm:w-auto" onClick={() => removeShowFormContextRow(i)}>
 											Remove
 										</Button>
 									</div>
@@ -1711,28 +1753,38 @@ export default function EncatchTestPage() {
 			</div>
 
 			{/* Other SDK methods */}
-			<div className="grid gap-4 lg:grid-cols-2">
+			<div className="grid min-w-0 gap-4 lg:grid-cols-2 [&>*]:min-w-0">
 				<Section title="trackEvent & trackScreen" description="Fire a custom event or track a screen view." icon="solar:graph-up-bold-duotone">
 					<div className="flex flex-col gap-4">
 						<div className="flex flex-col gap-1.5">
 							<Label htmlFor="event-name">Event name</Label>
-							<div className="flex gap-2">
-								<Input id="event-name" value={trackEventName} onChange={(e) => setTrackEventName(e.target.value)} placeholder="test_event" className="flex-1" />
-								<Button onClick={handleTrackEvent}>Fire event</Button>
+							<div className="flex flex-col gap-2 sm:flex-row">
+								<Input
+									id="event-name"
+									value={trackEventName}
+									onChange={(e) => setTrackEventName(e.target.value)}
+									placeholder="test_event"
+									className="min-w-0 flex-1"
+								/>
+								<Button className="w-full sm:w-auto" onClick={handleTrackEvent}>
+									Fire event
+								</Button>
 							</div>
 							<ResultMessage message={trackResult} />
 						</div>
 						<div className="flex flex-col gap-1.5">
 							<Label htmlFor="screen-name">Screen name</Label>
-							<div className="flex gap-2">
+							<div className="flex flex-col gap-2 sm:flex-row">
 								<Input
 									id="screen-name"
 									value={screenName}
 									onChange={(e) => setScreenName(e.target.value)}
 									placeholder={window.location.href}
-									className="flex-1"
+									className="min-w-0 flex-1"
 								/>
-								<Button onClick={handleTrackScreen}>Track screen</Button>
+								<Button className="w-full sm:w-auto" onClick={handleTrackScreen}>
+									Track screen
+								</Button>
 							</div>
 							<ResultMessage message={trackScreenResult} />
 						</div>

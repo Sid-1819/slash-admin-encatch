@@ -10,7 +10,7 @@ export default function DashboardLayout() {
 	const isMobile = useMediaQuery(down("md"));
 
 	return (
-		<div data-slot="slash-layout-root" className="w-full min-h-svh bg-background">
+		<div data-slot="slash-layout-root" className="w-full min-w-0 max-w-full min-h-svh overflow-x-clip bg-background">
 			{isMobile ? <MobileLayout /> : <PcLayout />}
 		</div>
 	);
@@ -19,7 +19,7 @@ export default function DashboardLayout() {
 function MobileLayout() {
 	const navData = useFilteredNavData();
 	return (
-		<div className="flex flex-col">
+		<div className="flex w-full min-w-0 max-w-full flex-col overflow-x-clip">
 			<Header leftSlot={<NavMobileLayout data={navData} />} />
 			<Main />
 		</div>

@@ -107,7 +107,7 @@ const SearchBar = () => {
 			<Button variant="ghost" className="bg-action-selected px-2 rounded-lg" size="sm" onClick={handleOpenSearch}>
 				<div className="flex items-center justify-center gap-4">
 					<Icon icon="local:ic-search" size="20" />
-					<kbd className="flex items-center justify-center rounded-md bg-primary/80 text-common-white px-1.5 py-0.5 text-sm font-semibold">
+					<kbd className="hidden items-center justify-center rounded-md bg-primary/80 text-common-white px-1.5 py-0.5 text-sm font-semibold sm:flex">
 						<Icon icon="qlementine-icons:key-cmd-16" />
 						<span>K</span>
 					</kbd>

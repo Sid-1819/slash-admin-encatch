@@ -36,6 +36,7 @@ const Main = () => {
 
 	const { pathname } = useLocation();
 	const currentNavAuth = findAuthByPath(pathname);
+	const fullWidthPage = pathname === "/encatch-test";
 
 	const heightClass =
 		themeLayout === ThemeLayout.Horizontal
@@ -43,12 +44,12 @@ const Main = () => {
 			: "h-[calc(100vh-var(--layout-header-height))]";
 
 	return (
-		<ScrollArea className={cn("flex w-full grow ", heightClass)} ref={mainRef}>
+		<ScrollArea className={cn("flex w-full min-w-0 max-w-full grow", heightClass)} ref={mainRef}>
 			<AuthGuard checkAny={currentNavAuth} fallback={<Page403 />}>
 				<main
 					data-slot="slash-layout-main"
-					className={cn("w-full h-full mx-auto p-2 overflow-auto", {
-						"xl:max-w-screen-xl": !themeStretch,
+					className={cn("h-full w-full min-w-0 max-w-full overflow-x-clip", fullWidthPage ? "p-2 sm:p-3" : "mx-auto p-2", {
+						"xl:max-w-screen-xl": !themeStretch && !fullWidthPage,
 					})}
 				>
 					<Suspense fallback={<LineLoading />}>
