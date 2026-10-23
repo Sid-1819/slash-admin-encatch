@@ -165,6 +165,7 @@
 			"encatch_hmac_generator": "Encatch HMAC 生成器",
 			"shareable_prefill_test": "Shareable URL 测试",
 			"encatch_log_viewer": "Encatch 日志查看器",
+			"webhooks": "Webhooks",
 			"encatch_webhook_test": "Encatch Webhook 测试",
 			"refiner_test": "Refiner 测试",
 			"permission.page_test": "页面鉴权测试",

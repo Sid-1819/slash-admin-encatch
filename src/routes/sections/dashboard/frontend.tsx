@@ -3,6 +3,7 @@ import { Navigate } from "react-router";
 import { Component } from "./utils";
 
 export const frontendDashboardRoutes: RouteObject[] = [
+	{ path: "webhooks", element: Component("/pages/dashboard/webhooks") },
 	{ path: "workbench", element: Component("/pages/dashboard/workbench") },
 	{ path: "analysis", element: Component("/pages/dashboard/analysis") },
 	{ path: "encatch-test", element: Component("/pages/dashboard/encatch-test") },

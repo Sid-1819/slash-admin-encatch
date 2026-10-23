@@ -6,6 +6,8 @@ import { defineConfig, loadEnv } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { encatchWebhookPlugin } from "./vite-plugin-encatch-webhook";
 
+import { webhookInboxPlugin } from "./server/webhook-inbox";
+
 const ENCATCH_PROXY_DEFAULT = "https://form-uat.encatch.com";
 
 export default defineConfig(({ mode }) => {
@@ -19,6 +21,7 @@ export default defineConfig(({ mode }) => {
 		base,
 		plugins: [
 			encatchWebhookPlugin(),
+			webhookInboxPlugin(env.WEBHOOK_STORAGE_DIR),
 			react(),
 			vanillaExtractPlugin({
 				identifiers: ({ debugId }) => `${debugId}`,
