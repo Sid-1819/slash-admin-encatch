@@ -119,7 +119,7 @@ function handleRequest(method, headers, body) {
 	};
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
 	try {
 		res.setHeader("Access-Control-Allow-Origin", "*");
 		res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
@@ -139,4 +139,4 @@ module.exports = async function handler(req, res) {
 			error: error instanceof Error ? error.message : String(error),
 		});
 	}
-};
+}
